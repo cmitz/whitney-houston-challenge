@@ -1,11 +1,19 @@
-<script setup></script>
+<script setup>
+import { RouterLink } from 'vue-router'
+import MainLayout from './layouts/MainLayout.vue'
+</script>
 
 <template>
-  <h1>You did it!</h1>
-  <p>
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-  </p>
+  <nav>
+    <RouterLink to="/">Go to GAME</RouterLink>
+    <RouterLink to="/poc">Go to POC</RouterLink>
+  </nav>
+
+  <hr />
+
+  <MainLayout>
+    <RouterView />
+  </MainLayout>
 </template>
 
 <style scoped></style>
