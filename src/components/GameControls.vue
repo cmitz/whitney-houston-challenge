@@ -6,8 +6,6 @@ import { createBrowserInspector } from '@statelyai/inspect'
 
 import { gameMachine } from '../state-machines/gameMachine'
 
-const IDEAL_HIT_TIMESTAMP_AFTER_START = 18737
-
 // UI elements
 const challengeAudioRef = ref(null)
 const buttonHitAudioRef = ref(null)
@@ -63,55 +61,26 @@ const { snapshot: state, send } = useMachine(gameMachine, {
 
 // Button handlers
 function startChallenge() {
-  send({ type: 'START_GAME' })
   if (audioContext.value.state === 'suspended') {
     audioContext.value.resume()
   }
   challengeAudioRef.value.currentTime = 0
   challengeAudioRef.value.play()
-
-  // Fade-in
-  gainNodes.value.challenge.gain.value = 0.01
-  gainNodes.value.challenge.gain.exponentialRampToValueAtTime(1.0, 2)
-
-  // And fade-out at the end
-  const waveArray = new Float32Array(4)
-  waveArray[0] = 1
-  waveArray[1] = 0.5
-  waveArray[2] = 0.11
-  waveArray[3] = 0.0
-  console.log('duration', challengeAudioRef.value.duration)
-  gainNodes.value.challenge.gain.setValueCurveAtTime(
-    waveArray,
-    challengeAudioRef.value.duration - 10,
-    1,
-  )
+  send({ type: 'round.start' })
 }
 
 function hit() {
   buttonHitAudioRef.value.currentTime = 0
   buttonHitAudioRef.value.play()
 
-  // Calculate score
-  const hitTimestamp = new Date().getTime()
-  if (!state.value.context.attemptStartedAt) debugger
-  const startedAtTimestamp = state.value.context.attemptStartedAt
-
-  const msAfterStart = hitTimestamp - startedAtTimestamp
-  const msOff = msAfterStart - IDEAL_HIT_TIMESTAMP_AFTER_START
-  console.log('msOff', msOff)
-
   // Update score object
-  send({ type: 'SAVE_SCORE', msOff, hitTimestamp })
-}
-
-function updateTeamName($event) {
-  send({ type: 'TEAM_NAME_CHANGED', value: $event.target.value })
+  send({ type: 'round.completed', secondsIn: challengeAudioRef.value.currentTime })
 }
 
 function resetGame() {
+  challengeAudioRef.value.pause()
   challengeAudioRef.value.currentTime = 0
-  send({ type: 'RESET_GAME' })
+  send({ type: 'round.reset' })
 }
 
 const musicPlaying = computed(() => {
@@ -124,12 +93,9 @@ const musicPlaying = computed(() => {
 // Event listeners
 function audioEnded() {
   // Update score object
-  send({ type: 'TIMEOUT' })
+  send({ type: 'round.failed' })
 }
 
-function resetHandler() {
-  console.log('TODO: RESET GAME')
-}
 // state.addEventListener('reset', resetHandler)
 
 // Lifecycle managers
@@ -138,23 +104,20 @@ onMounted(initAudioAPI)
 
 <template>
   <input
-    @input="updateTeamName"
+    @input="send({ type: 'team.update_name', value: $event.target.value })"
+    :value="state.context.teamName"
     type="text"
-    :disabled="!['SETUP', 'READY_TO_PLAY'].includes(state.value)"
+    :disabled="!['waitingForTeamName', 'waitingForStart'].includes(state.value)"
     max="24"
   />
 
-  <button @click="startChallenge" :disabled="!state.matches('READY_TO_PLAY')">
+  <button @click="startChallenge" :disabled="!state.matches('waitingForStart')">
     Start challenge
   </button>
 
   <p>status: {{ musicPlaying }}; state: {{ state.value }}</p>
 
-  <button @click="hit" :disabled="!state.matches('PLAYING')">HIT IT</button>
-
-  <p font-size="48px" v-if="state.value === 'COMPLETED'">
-    Score: {{ JSON.stringify(state.context) }}
-  </p>
+  <button @click="hit" :disabled="!state.matches('roundPlaying')">HIT IT</button>
 
   <figure>
     <figcaption>Listen to the Whitney Houston Challenge!</figcaption>
@@ -163,15 +126,14 @@ onMounted(initAudioAPI)
       preload="auto"
       ref="challengeAudioRef"
       src="/challenge_snippet_i_will_always_love_rudolph.wav"
-    ></audio>
-    <audio
-      disableremoteplayback
-      preload="auto"
-      ref="buttonHitAudioRef"
-      src="/impact.wav"
       @ended="audioEnded"
     ></audio>
+    <audio disableremoteplayback preload="auto" ref="buttonHitAudioRef" src="/impact.wav"></audio>
   </figure>
 
   <button @click="resetGame">Reset</button>
+
+  <hr />
+
+  <pre>{{ JSON.stringify(state, null, 2) }}</pre>
 </template>
