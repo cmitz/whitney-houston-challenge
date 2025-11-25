@@ -6,7 +6,7 @@ import { createBrowserInspector } from '@statelyai/inspect'
 
 import { gameMachine } from '../state-machines/gameMachine'
 
-const IDEAL_HIT_TIMESTAMP_AFTER_START = 18825
+const IDEAL_HIT_TIMESTAMP_AFTER_START = 18737
 
 // UI elements
 const challengeAudioRef = ref(null)
@@ -31,10 +31,6 @@ function initAudioAPI() {
   // Create gain nodes
   const challengeGain = audioContext.value.createGain()
   const buttonHitGain = audioContext.value.createGain()
-
-  // Add fade-in
-  challengeGain.gain.value = 0.01
-  challengeGain.gain.exponentialRampToValueAtTime(1.0, 2)
 
   // Add strong entry of drum
   buttonHitGain.gain.value = 1.4
@@ -71,7 +67,12 @@ function startChallenge() {
   if (audioContext.value.state === 'suspended') {
     audioContext.value.resume()
   }
+  challengeAudioRef.value.currentTime = 0
   challengeAudioRef.value.play()
+
+  // Fade-in
+  gainNodes.value.challenge.gain.value = 0.01
+  gainNodes.value.challenge.gain.exponentialRampToValueAtTime(1.0, 2)
 
   // And fade-out at the end
   const waveArray = new Float32Array(4)
@@ -90,19 +91,6 @@ function startChallenge() {
 function hit() {
   buttonHitAudioRef.value.currentTime = 0
   buttonHitAudioRef.value.play()
-  calculateDiff()
-}
-
-const musicPlaying = computed(() => {
-  if (audioContext.value) {
-    return audioContext.value.state !== 'playing'
-  }
-  return false
-})
-
-function calculateDiff() {
-  // // Start the hit audio
-  // buttonHitAudioRef.value.play()
 
   // Calculate score
   const hitTimestamp = new Date().getTime()
@@ -116,20 +104,35 @@ function calculateDiff() {
   // Update score object
   send({ type: 'SAVE_SCORE', msOff, hitTimestamp })
 }
-function audioEnded() {
-  // Update score object
-  send({ type: 'TIMEOUT' })
-}
 
 function updateTeamName($event) {
   send({ type: 'TEAM_NAME_CHANGED', value: $event.target.value })
 }
 
 function resetGame() {
-  state
+  challengeAudioRef.value.currentTime = 0
   send({ type: 'RESET_GAME' })
 }
 
+const musicPlaying = computed(() => {
+  if (audioContext.value) {
+    return audioContext.value.state !== 'playing'
+  }
+  return false
+})
+
+// Event listeners
+function audioEnded() {
+  // Update score object
+  send({ type: 'TIMEOUT' })
+}
+
+function resetHandler() {
+  console.log('TODO: RESET GAME')
+}
+// state.addEventListener('reset', resetHandler)
+
+// Lifecycle managers
 onMounted(initAudioAPI)
 </script>
 

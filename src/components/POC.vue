@@ -37,14 +37,6 @@ const machine = setup({
       },
     },
   },
-  // on: {
-  //   '*': {
-  //     actions: (context, event) => {
-  //       console.log(`Transitioned from ${context.state.value} to ${event.type}`)
-  //       context.stepsCounted += 1
-  //     },
-  //   },
-  // },
 })
 
 const { inspect } = createBrowserInspector({

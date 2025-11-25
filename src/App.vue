@@ -4,12 +4,14 @@ import MainLayout from './layouts/MainLayout.vue'
 </script>
 
 <template>
-  <nav>
-    <RouterLink to="/">Go to GAME</RouterLink>
-    <RouterLink to="/poc">Go to POC</RouterLink>
-  </nav>
+  <div v-if="false">
+    <nav>
+      <RouterLink to="/">Go to Home</RouterLink>
+      <RouterLink to="/poc">Go to POC</RouterLink>
+    </nav>
 
-  <hr />
+    <hr />
+  </div>
 
   <MainLayout>
     <RouterView />
@@ -17,3 +19,11 @@ import MainLayout from './layouts/MainLayout.vue'
 </template>
 
 <style scoped></style>
+
+<style>
+/**
+* By wrapping the reset in a layer, it automatically has zero
+* specificity, thus it is overridden by all other styles
+*/
+@import 'reset.css' layer(reset);
+</style>
