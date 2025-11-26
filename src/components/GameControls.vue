@@ -1,14 +1,26 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watchEffect, onMounted } from 'vue'
 
-import { useMachine } from '@xstate/vue'
-import { createBrowserInspector } from '@statelyai/inspect'
+import { useActor } from '@xstate/vue'
 
 import { gameMachine } from '../state-machines/gameMachine'
+import {
+  loadRoundsFromStorage,
+  addRoundToStorage,
+  clearRoundsFromStorage,
+} from '../state-machines/roundsStorage'
 
 // UI elements
 const challengeAudioRef = ref(null)
 const buttonHitAudioRef = ref(null)
+const hitButtonRef = ref(null)
+
+// Data
+const loadingStatusRef = ref({
+  challengeAudioLoaded: false,
+  buttonHitAudioLoaded: false,
+})
+const scoresList = ref([])
 
 // Audio API
 const audioContext = ref(null)
@@ -43,21 +55,10 @@ function initAudioAPI() {
   // Save gain refs
   gainNodes.value.challenge = challengeGain
   gainNodes.value.buttonHit = buttonHitGain
-
-  // More debugging:
-  challengeAudioRef.value.addEventListener('play', () => {
-    console.log('challengeAudioRef started')
-  })
-  challengeAudioRef.value.addEventListener('ended', () => {
-    console.log('challengeAudioRef ended')
-  })
 }
 
 // Gameplay status
-const { inspect } = createBrowserInspector({ autoStart: false })
-const { snapshot: state, send } = useMachine(gameMachine, {
-  inspect,
-})
+const { snapshot: actor, send: sendActor } = useActor(gameMachine)
 
 // Button handlers
 function startChallenge() {
@@ -66,7 +67,8 @@ function startChallenge() {
   }
   challengeAudioRef.value.currentTime = 0
   challengeAudioRef.value.play()
-  send({ type: 'round.start' })
+  sendActor({ type: 'round.start' })
+  hitButtonRef.value.focus()
 }
 
 function hit() {
@@ -74,13 +76,25 @@ function hit() {
   buttonHitAudioRef.value.play()
 
   // Update score object
-  send({ type: 'round.completed', secondsIn: challengeAudioRef.value.currentTime })
+  sendActor({ type: 'round.completed', secondsIn: challengeAudioRef.value.currentTime })
 }
 
-function resetGame() {
-  challengeAudioRef.value.pause()
-  challengeAudioRef.value.currentTime = 0
-  send({ type: 'round.reset' })
+function saveAndPlayAgain() {
+  const { context } = actor.value
+  const roundData = {
+    teamName: context.teamName,
+    score: context.score,
+    msOff: context.msOff,
+    gamePlayedAt: context.gamePlayedAt,
+  }
+  addRoundToStorage(roundData)
+  scoresList.value = loadRoundsFromStorage()
+  sendActor({ type: 'game.reset' })
+}
+
+function clearHistory() {
+  clearRoundsFromStorage()
+  scoresList.value = loadRoundsFromStorage()
 }
 
 const musicPlaying = computed(() => {
@@ -91,33 +105,45 @@ const musicPlaying = computed(() => {
 })
 
 // Event listeners
+function challengeAudioLoadedCompletely() {
+  loadingStatusRef.value.challengeAudioLoaded = true
+}
+function buttonHitAudioLoadedCompletely() {
+  loadingStatusRef.value.buttonHitAudioLoaded = true
+}
+watchEffect(() => {
+  if (loadingStatusRef.value.challengeAudioLoaded && loadingStatusRef.value.buttonHitAudioLoaded) {
+    sendActor({ type: 'game.loaded' })
+  }
+})
 function audioEnded() {
-  // Update score object
-  send({ type: 'round.failed' })
+  sendActor({ type: 'round.timeout' })
 }
 
-// state.addEventListener('reset', resetHandler)
-
 // Lifecycle managers
-onMounted(initAudioAPI)
+onMounted(() => {
+  initAudioAPI()
+  scoresList.value = loadRoundsFromStorage()
+})
 </script>
 
 <template>
   <input
-    @input="send({ type: 'team.update_name', value: $event.target.value })"
-    :value="state.context.teamName"
+    @input="sendActor({ type: 'team.update_name', value: $event.target.value })"
+    :value="actor.context.teamName"
     type="text"
-    :disabled="!['waitingForTeamName', 'waitingForStart'].includes(state.value)"
+    @keyup.enter="startChallenge"
+    :disabled="!['waitingForTeamName', 'waitingForStart'].includes(actor.value)"
     max="24"
   />
 
-  <button @click="startChallenge" :disabled="!state.matches('waitingForStart')">
+  <button @click="startChallenge" :disabled="!actor.matches('waitingForStart')">
     Start challenge
   </button>
 
-  <p>status: {{ musicPlaying }}; state: {{ state.value }}</p>
+  <p>status: {{ musicPlaying }}; state: {{ actor.value }}</p>
 
-  <button @click="hit" :disabled="!state.matches('roundPlaying')">HIT IT</button>
+  <button @click="hit" :disabled="!actor.matches('roundPlaying')" ref="hitButtonRef">HIT IT</button>
 
   <figure>
     <figcaption>Listen to the Whitney Houston Challenge!</figcaption>
@@ -127,13 +153,33 @@ onMounted(initAudioAPI)
       ref="challengeAudioRef"
       src="/challenge_snippet_i_will_always_love_rudolph.wav"
       @ended="audioEnded"
+      @canplaythrough="challengeAudioLoadedCompletely"
     ></audio>
-    <audio disableremoteplayback preload="auto" ref="buttonHitAudioRef" src="/impact.wav"></audio>
+  </figure>
+  <figure>
+    <figcaption>The drum hit</figcaption>
+    <audio
+      disableremoteplayback
+      preload="auto"
+      ref="buttonHitAudioRef"
+      src="/impact.wav"
+      @canplaythrough="buttonHitAudioLoadedCompletely"
+    ></audio>
   </figure>
 
-  <button @click="resetGame">Reset</button>
+  <button @click="saveAndPlayAgain" :disabled="!actor.matches('roundFinished')">
+    Save and play again
+  </button>
 
   <hr />
 
-  <pre>{{ JSON.stringify(state, null, 2) }}</pre>
+  <h2>History</h2>
+  <ul>
+    <li v-for="score in scoresList" :key="score.id">
+      Team: "{{ score.teamName }}" scored {{ score.score }} points ({{ score.msOff }} ms off),
+      played at
+      {{ new Date(score.gamePlayedAt).toLocaleString() }}
+    </li>
+  </ul>
+  <button @click="clearHistory">Clear localStorage</button>
 </template>

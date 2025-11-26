@@ -65,3 +65,15 @@ pnpm build
 ```sh
 pnpm lint
 ```
+
+## Hardware
+
+Bought components:
+
+| Component | URL | Price |
+|:---------|---|---:|
+| Big Red Button | https://www.amazon.nl/dp/B08CT9QLC6?psc=1&smid=A33IPFXZU26H4S | €29,86 |
+| Pi 5 board | https://www.raspberrystore.nl/PrestaShop/nl/raspberry-pi-5/598-raspberry-pi-5-2gb-5056561803302.html | €54,95 ||
+| Pi 5 Power | https://www.raspberrystore.nl/PrestaShop/nl/raspberry-pi-5/511-raspberry-pi-27w-usb-c-power-supply-wit-eu-voor-raspberry-pi-5-5056561803401.html | €12,95 |
+| Pi 5 SD card | https://www.raspberrystore.nl/PrestaShop/nl/storage-sd-kaarten-en-ssd-s/594-micro-sd-kaart-32gb-van-raspberrypi-inclusief-raspberry-pi-os-met-desktop-pre-installed-5056561804200.html | €10,95 |
+| Pi 5 HDMI thing | https://www.raspberrystore.nl/PrestaShop/nl/kabels/237-micro-hdmi-naar-hdmi-contrastekker-zwart-02m-5412810325542.html | €4,95 |
