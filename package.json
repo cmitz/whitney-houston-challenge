@@ -18,6 +18,7 @@
   "dependencies": {
     "@statelyai/inspect": "^0.4.0",
     "@xstate/vue": "^5.0.0",
+    "lodash": "^4.17.21",
     "vue": "^3.5.22",
     "vue-router": "^4.6.3",
     "xstate": "^5.24.0"
