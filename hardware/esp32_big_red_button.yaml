@@ -1,6 +1,10 @@
 esphome:
   name: bigredbutton
   friendly_name: BigRedButton
+  on_boot:
+    then:
+      # optionally reboot arduino when this device is rebooted
+      - switch.turn_on: arduino_reset
 
 esp32:
   board: esp32-s3-devkitc-1
@@ -12,7 +16,7 @@ esp32:
 ###################
 
 # Enable logging
-logger:
+# logger:
 
 # Enable Home Assistant API
 api:
@@ -39,21 +43,137 @@ captive_portal:
 ####################
 # two_short:d=4,o=5,b=100:16e6,16e6
 # star_wars:d=16,o=5,b=100:4e,4e,4e,8c,p,g,4e,8c,p,g,4e,4p,4b,4b,4b,8c6,p,g,4d#,8c,p,g,4e,8p
+### From https://github.com/jensweimann/esphome_ducky/blob/main/esphome/nodemcu.yaml
+logger:
+  # move esphome's logger to UART1 since we use UART0 for communcation with the arduino
+  hardware_uart: UART1
+  # disable hardware logging
+  baud_rate: 0
+  level: INFO
+
+globals:
+  # global variable for the hostmachine power state
+  - id: last_host_state
+    type: std::string
+    restore_value: no
+    initial_value: ''
+
+external_components:
+  - source: github://eigger/espcomponents@latest # https://github.com/eigger/espcomponents/tree/master/components/uartex
+    components:
+      - uartex
+uartex:
+  rx_footer: "\r\n"
+### End copy from https://github.com/jensweimann/esphome_ducky/blob/main/esphome/nodemcu.yaml
+
+### Button Sensor and debug sound
 binary_sensor:
   - platform: gpio
-    pin: GPIO1
     name: 'Big Button Press'
-    interrupt_type: RISING
+    pin:
+      number: GPIO1
+      mode:
+        input: true
+        pulldown: true
     on_press:
+      - logger.log: Button Pressed
+      # - rtttl.play: 'star_wars:d=16,o=5,b=100:4e,4e,4e,8c,p,g,4e,8c,p,g,4e,4p,4b,4b,4b,8c6,p,g,4d#,8c,p,g,4e,8p'
       - rtttl.play: 'two_short:d=4,o=5,b=100:16e6,16e6'
+      - script.execute:
+          id: send_text
+          keyboard_text: 'Hello, World!'
     entity_category: diagnostic
 
 output:
   - platform: ledc
     pin: GPIO4
-    id: buzzer_output
     frequency: 1000 Hz
+    id: buzzer_output
 
 rtttl:
   output: buzzer_output
   id: my_rtttl
+### End button sensor and debug sound
+
+script:
+  - id: send_text
+    parameters:
+      keyboard_text: string
+    then:
+      - logger.log:
+          level: INFO
+          format: 'ducky_request: %s'
+          args: ['keyboard_text.c_str()']
+      - uart.write:
+          id: ducky
+          # encapsulate message with STX and ETX chars and write to serial port
+          data: !lambda |-
+            char stx = 0x02;
+            char etx = 0x03;
+            std::string s = stx + keyboard_text + etx;
+            return std::vector<unsigned char>(s.begin(),s.end());
+
+### Start uart communication stuff with arduino
+uart:
+  id: ducky
+  tx_pin: GPIO43
+  rx_pin: GPIO44
+  baud_rate: 115200
+
+text_sensor:
+  # feedback from arduino
+  - platform: template
+    name: ${unit_name}_response
+    id: ducky_response
+    on_value:
+      - logger.log:
+          level: INFO
+          format: 'ducky_response: %s'
+          args: ['x.c_str()']
+
+  # host machine's usb serial input forwarding
+  - platform: template
+    id: ducky_usb_input
+    name: ${unit_name}_usb_input
+
+  # serial port sensor
+  - platform: uartex
+    id: read_line_sensor
+    lambda: |-
+      return std::string(reinterpret_cast<const char*>(data), len);
+    on_value:
+      then:
+        - if:
+            condition:
+              # usb serial input forwarding
+              lambda: |-
+                return str_startswith(x, "USB_INPUT=");
+            then:
+              - text_sensor.template.publish:
+                  id: ducky_usb_input
+                  state: !lambda |-
+                    x.erase(0,10);
+                    return x.c_str();
+            else:
+              # responses (ready/busy etc.)
+              - if:
+                  condition:
+                    lambda: |-
+                      return (x != id(ducky_response).state);
+                  then:
+                    - text_sensor.template.publish:
+                        id: ducky_response
+                        state: !lambda |-
+                          return x;
+
+# optional arduino reset pin
+# optional arduino reset pin
+switch:
+  - platform: gpio
+    pin:
+      number: GPIO9
+      inverted: True
+    id: arduino_reset
+    on_turn_on:
+      - delay: 50ms
+      - switch.turn_off: arduino_reset
