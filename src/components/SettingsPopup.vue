@@ -42,6 +42,8 @@ import {
   saveSlackWebhookToStorage,
 } from '../state-machines/roundsStorage'
 
+const emit = defineEmits(['localStorage-cleared'])
+
 const isOpen = ref(false)
 const slackWebhookUrl = ref('')
 const webhookSaved = ref(false)
@@ -95,8 +97,8 @@ function clearLocalStorage() {
     clearSlackWebhookFromStorage()
     // Reload the webhook after clearing
     loadSlackWebhook()
-    // Dispatch event to notify other components
-    window.dispatchEvent(new Event('localStorage-cleared'))
+    // Emit event to notify other components
+    emit('localStorage-cleared')
     closePopup()
   }
 }

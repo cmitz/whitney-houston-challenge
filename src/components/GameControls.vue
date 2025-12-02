@@ -1,10 +1,12 @@
 <script setup>
-import { ref, computed, watchEffect, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watchEffect, onMounted, onUnmounted, inject } from 'vue'
 import { useActor } from '@xstate/vue'
 import { sortBy } from 'lodash'
 
 import { gameMachine } from '../state-machines/gameMachine'
 import { loadRoundsFromStorage, addRoundToStorage } from '../state-machines/roundsStorage'
+
+const registerStorageClearedCallback = inject('registerStorageClearedCallback', () => {})
 
 // UI elements
 const challengeAudioRef = ref(null)
@@ -126,11 +128,15 @@ function audioEnded() {
 onMounted(() => {
   initAudioAPI()
   scoresList.value = loadRoundsFromStorage()
-  window.addEventListener('localStorage-cleared', reloadScores)
+
+  // Register listener for localStorage cleared events
+  if (registerStorageClearedCallback) {
+    registerStorageClearedCallback(reloadScores)
+  }
 })
 
 onUnmounted(() => {
-  window.removeEventListener('localStorage-cleared', reloadScores)
+  // cleanup if needed
 })
 </script>
 

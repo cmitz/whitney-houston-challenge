@@ -3,15 +3,16 @@
     <main>
       <slot />
     </main>
-    <SettingsPopup ref="settingsPopupRef" />
+    <SettingsPopup ref="settingsPopupRef" @localStorage-cleared="notifyStorageCleared" />
   </div>
 </template>
 
 <script setup lang="js">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, provide, onMounted, onUnmounted } from 'vue'
 import SettingsPopup from '../components/SettingsPopup.vue'
 
 const settingsPopupRef = ref(null)
+const callbacks = ref([])
 
 function handleKeyDown(e) {
   // Cmd+, (Comma) on Mac or Ctrl+, on Windows/Linux
@@ -20,6 +21,16 @@ function handleKeyDown(e) {
     settingsPopupRef.value?.togglePopup()
   }
 }
+
+function notifyStorageCleared() {
+  callbacks.value.forEach((callback) => callback())
+}
+
+function registerStorageClearedCallback(callback) {
+  callbacks.value.push(callback)
+}
+
+provide('registerStorageClearedCallback', registerStorageClearedCallback)
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
