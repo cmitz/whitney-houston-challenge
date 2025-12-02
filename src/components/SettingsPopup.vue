@@ -40,7 +40,7 @@ import {
   clearRoundsFromStorage,
   clearSlackWebhookFromStorage,
   saveSlackWebhookToStorage,
-} from '../state-machines/roundsStorage'
+} from '../helpers/localStorage'
 
 const emit = defineEmits(['localStorage-cleared'])
 

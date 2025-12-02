@@ -4,7 +4,8 @@ import { useActor } from '@xstate/vue'
 import { sortBy } from 'lodash'
 
 import { gameMachine } from '../state-machines/gameMachine'
-import { loadRoundsFromStorage, addRoundToStorage } from '../state-machines/roundsStorage'
+import { loadRoundsFromStorage, addRoundToStorage } from '../helpers/localStorage'
+import { postScoreToSlack } from '../helpers/postToSlack'
 
 const registerStorageClearedCallback = inject('registerStorageClearedCallback', () => {})
 
@@ -87,6 +88,7 @@ function saveAndPlayAgain() {
     gamePlayedAt: context.gamePlayedAt,
   }
   addRoundToStorage(roundData)
+  postScoreToSlack(roundData)
   sendActor({ type: 'game.reset' })
 
   scoresList.value = loadRoundsFromStorage()
