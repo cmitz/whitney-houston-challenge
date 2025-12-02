@@ -1,19 +1,16 @@
 <script setup>
-import { ref, computed, watchEffect, onMounted } from 'vue'
-
+import { ref, computed, watchEffect, onMounted, onUnmounted } from 'vue'
 import { useActor } from '@xstate/vue'
+import { sortBy } from 'lodash'
 
 import { gameMachine } from '../state-machines/gameMachine'
-import {
-  loadRoundsFromStorage,
-  addRoundToStorage,
-  clearRoundsFromStorage,
-} from '../state-machines/roundsStorage'
+import { loadRoundsFromStorage, addRoundToStorage } from '../state-machines/roundsStorage'
 
 // UI elements
 const challengeAudioRef = ref(null)
 const buttonHitAudioRef = ref(null)
 const hitButtonRef = ref(null)
+const teamNameInputRef = ref(null)
 
 // Data
 const loadingStatusRef = ref({
@@ -88,12 +85,14 @@ function saveAndPlayAgain() {
     gamePlayedAt: context.gamePlayedAt,
   }
   addRoundToStorage(roundData)
-  scoresList.value = loadRoundsFromStorage()
   sendActor({ type: 'game.reset' })
+
+  scoresList.value = loadRoundsFromStorage()
+  challengeAudioRef.value.pause()
+  teamNameInputRef.value.focus()
 }
 
-function clearHistory() {
-  clearRoundsFromStorage()
+function reloadScores() {
   scoresList.value = loadRoundsFromStorage()
 }
 
@@ -102,6 +101,9 @@ const musicPlaying = computed(() => {
     return audioContext.value.state !== 'playing'
   }
   return false
+})
+const sortedScores = computed(() => {
+  return sortBy(scoresList.value, ['score', 'msOff']).reverse()
 })
 
 // Event listeners
@@ -124,62 +126,70 @@ function audioEnded() {
 onMounted(() => {
   initAudioAPI()
   scoresList.value = loadRoundsFromStorage()
+  window.addEventListener('localStorage-cleared', reloadScores)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('localStorage-cleared', reloadScores)
 })
 </script>
 
 <template>
-  <input
-    @input="sendActor({ type: 'team.update_name', value: $event.target.value })"
-    :value="actor.context.teamName"
-    type="text"
-    @keyup.enter="startChallenge"
-    :disabled="!['waitingForTeamName', 'waitingForStart'].includes(actor.value)"
-    max="24"
-  />
+  <div>
+    <input
+      @input="sendActor({ type: 'team.update_name', value: $event.target.value })"
+      :value="actor.context.teamName"
+      type="text"
+      @keyup.enter="startChallenge"
+      :disabled="!['waitingForTeamName', 'waitingForStart'].includes(actor.value)"
+      max="24"
+      autofocus
+      ref="teamNameInputRef"
+    />
 
-  <button @click="startChallenge" :disabled="!actor.matches('waitingForStart')">
-    Start challenge
-  </button>
+    <button @click="startChallenge" :disabled="!actor.matches('waitingForStart')">
+      Start challenge
+    </button>
 
-  <p>status: {{ musicPlaying }}; state: {{ actor.value }}</p>
+    <p>status: {{ musicPlaying }}; state: {{ actor.value }}</p>
 
-  <button @click="hit" :disabled="!actor.matches('roundPlaying')" ref="hitButtonRef">HIT IT</button>
+    <button @click="hit" :disabled="!actor.matches('roundPlaying')" ref="hitButtonRef">
+      HIT IT
+    </button>
 
-  <figure>
-    <figcaption>Listen to the Whitney Houston Challenge!</figcaption>
-    <audio
-      disableremoteplayback
-      preload="auto"
-      ref="challengeAudioRef"
-      src="/challenge_snippet_i_will_always_love_rudolph.wav"
-      @ended="audioEnded"
-      @canplaythrough="challengeAudioLoadedCompletely"
-    ></audio>
-  </figure>
-  <figure>
-    <figcaption>The drum hit</figcaption>
-    <audio
-      disableremoteplayback
-      preload="auto"
-      ref="buttonHitAudioRef"
-      src="/impact.wav"
-      @canplaythrough="buttonHitAudioLoadedCompletely"
-    ></audio>
-  </figure>
+    <figure>
+      <figcaption>Listen to the Whitney Houston Challenge!</figcaption>
+      <audio
+        disableremoteplayback
+        preload="auto"
+        ref="challengeAudioRef"
+        src="/challenge_snippet_i_will_always_love_rudolph.wav"
+        @ended="audioEnded"
+        @canplaythrough="challengeAudioLoadedCompletely"
+      ></audio>
+    </figure>
+    <figure>
+      <figcaption>The drum hit</figcaption>
+      <audio
+        disableremoteplayback
+        preload="auto"
+        ref="buttonHitAudioRef"
+        src="/impact.wav"
+        @canplaythrough="buttonHitAudioLoadedCompletely"
+      ></audio>
+    </figure>
 
-  <button @click="saveAndPlayAgain" :disabled="!actor.matches('roundFinished')">
-    Save and play again
-  </button>
+    <button @click="saveAndPlayAgain" :disabled="!actor.matches('roundFinished')">
+      Save and play again
+    </button>
 
-  <hr />
+    <hr />
 
-  <h2>History</h2>
-  <ul>
-    <li v-for="score in scoresList" :key="score.id">
-      Team: "{{ score.teamName }}" scored {{ score.score }} points ({{ score.msOff }} ms off),
-      played at
-      {{ new Date(score.gamePlayedAt).toLocaleString() }}
-    </li>
-  </ul>
-  <button @click="clearHistory">Clear localStorage</button>
+    <h2>History</h2>
+    <div v-for="score in sortedScores" :key="score.id">
+      "{{ score.teamName }}" scored {{ score.score }} points ({{ Math.round(score.msOff) }} ms off
+      )<br />
+      <small>played at {{ new Date(score.gamePlayedAt).toLocaleString() }}</small>
+    </div>
+  </div>
 </template>

@@ -1,4 +1,4 @@
-import { assign, setup, not } from 'xstate'
+import { assign, setup } from 'xstate'
 
 const IDEAL_HIT_TIMESTAMP_AFTER_START = 19000
 const THRESHOLDS = [

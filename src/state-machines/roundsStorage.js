@@ -38,3 +38,21 @@ export function clearRoundsFromStorage() {
     console.error('Failed to clear rounds from storage:', error)
   }
 }
+
+const WEBHOOK_STORAGE_KEY = 'slack_webhook_url'
+
+export function saveSlackWebhookToStorage(slackWebhookUrl) {
+  try {
+    localStorage.setItem(WEBHOOK_STORAGE_KEY, slackWebhookUrl)
+  } catch (error) {
+    console.error('Failed to save rounds to storage:', error)
+  }
+}
+
+export function clearSlackWebhookFromStorage() {
+  try {
+    localStorage.removeItem(WEBHOOK_STORAGE_KEY)
+  } catch (error) {
+    console.error('Failed to clear webhook from storage:', error)
+  }
+}
