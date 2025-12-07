@@ -33,9 +33,6 @@ export async function postScoreToSlack(round) {
 
     const response = await fetch(webhookUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(message),
     })
 

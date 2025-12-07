@@ -1,5 +1,8 @@
 <template>
   <div class="layout">
+    <figure>
+      <img :src="GameShowLogo" alt="Whitney Houston Challenge" />
+    </figure>
     <main>
       <slot />
     </main>
@@ -9,7 +12,10 @@
 
 <script setup lang="js">
 import { ref, provide, onMounted, onUnmounted } from 'vue'
+
 import SettingsPopup from '../components/SettingsPopup.vue'
+
+import GameShowLogo from '../assets/logo_03.png'
 
 const settingsPopupRef = ref(null)
 const callbacks = ref([])
@@ -42,21 +48,19 @@ onUnmounted(() => {
 </script>
 
 <style>
-:root {
-  --bg-primary: #2d5f4f;
-  --bg-secondary: #3d7f5f;
-  --layout-aspect-ratio: 16 / 9;
-}
-
 .layout {
   display: flex;
   justify-content: center;
   align-items: center;
   width: 100vw;
   height: 100vh;
-  background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
   aspect-ratio: var(--layout-aspect-ratio);
   overflow: hidden;
+  background: radial-gradient(
+    circle,
+    var(--color-background-highlight) 0%,
+    var(--color-background-dark) 100%
+  );
 }
 
 main {

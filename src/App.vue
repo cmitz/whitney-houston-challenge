@@ -1,18 +1,9 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterView } from 'vue-router'
 import MainLayout from './layouts/MainLayout.vue'
 </script>
 
 <template>
-  <div v-if="false">
-    <nav>
-      <RouterLink to="/">Go to Home</RouterLink>
-      <RouterLink to="/poc">Go to POC</RouterLink>
-    </nav>
-
-    <hr />
-  </div>
-
   <MainLayout>
     <RouterView />
   </MainLayout>
@@ -26,4 +17,10 @@ import MainLayout from './layouts/MainLayout.vue'
 * specificity, thus it is overridden by all other styles
 */
 @import 'reset.css' layer(reset);
+
+:root {
+  --color-background-highlight: #798e36;
+  --color-background-dark: #07190d;
+  --layout-aspect-ratio: 16 / 9;
+}
 </style>
