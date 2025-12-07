@@ -1,10 +1,11 @@
-esphome:
+substitutions:
   name: bigredbutton
   friendly_name: BigRedButton
-  on_boot:
-    then:
-      # optionally reboot arduino when this device is rebooted
-      - switch.turn_on: arduino_reset
+  hid_unit_name: SEEED Arduino
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
 
 esp32:
   board: esp32-s3-devkitc-1
@@ -81,7 +82,10 @@ binary_sensor:
       - rtttl.play: 'two_short:d=4,o=5,b=100:16e6,16e6'
       - script.execute:
           id: send_text
-          keyboard_text: 'Hello, World!'
+          ducky_script: |
+            STRING Hello, World!
+            DELAY 100
+            ENTER
     entity_category: diagnostic
 
 output:
@@ -98,19 +102,19 @@ rtttl:
 script:
   - id: send_text
     parameters:
-      keyboard_text: string
+      ducky_script: string
     then:
       - logger.log:
           level: INFO
           format: 'ducky_request: %s'
-          args: ['keyboard_text.c_str()']
+          args: ['ducky_script.c_str()']
       - uart.write:
           id: ducky
           # encapsulate message with STX and ETX chars and write to serial port
           data: !lambda |-
             char stx = 0x02;
             char etx = 0x03;
-            std::string s = stx + keyboard_text + etx;
+            std::string s = stx + ducky_script + etx;
             return std::vector<unsigned char>(s.begin(),s.end());
 
 ### Start uart communication stuff with arduino
@@ -123,7 +127,7 @@ uart:
 text_sensor:
   # feedback from arduino
   - platform: template
-    name: ${unit_name}_response
+    name: ${hid_unit_name}_response
     id: ducky_response
     on_value:
       - logger.log:
@@ -134,7 +138,7 @@ text_sensor:
   # host machine's usb serial input forwarding
   - platform: template
     id: ducky_usb_input
-    name: ${unit_name}_usb_input
+    name: ${hid_unit_name}_usb_input
 
   # serial port sensor
   - platform: uartex
@@ -165,15 +169,3 @@ text_sensor:
                         id: ducky_response
                         state: !lambda |-
                           return x;
-
-# optional arduino reset pin
-# optional arduino reset pin
-switch:
-  - platform: gpio
-    pin:
-      number: GPIO9
-      inverted: True
-    id: arduino_reset
-    on_turn_on:
-      - delay: 50ms
-      - switch.turn_off: arduino_reset

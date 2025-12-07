@@ -59,6 +59,10 @@ void setup() {
   UsbSerial.begin(BAUD_RATE);
   EspSerial.begin(BAUD_RATE);
 
+  if (DEBUG) {
+    UsbSerial.println("XIAO firmware booting...");
+  }
+
   Keyboard.begin();
   Mouse.begin();
   Consumer.begin();
@@ -372,7 +376,7 @@ void handleDuckyCommand() {
         }
       }
     }
-    UsbSerial.println("done");
+    UsbSerial.println("done typing");
     EspSerial.println("ready");
     defaultDelay = 0;
     last = "";
@@ -433,9 +437,16 @@ void publishUsbDeviceState() {
   }
 }
 
+unsigned long lastHeartbeat = 0;
+
 void loop() {
   receiveFromEspSerial();
   receiveFromUsbSerial();
   handleNewData();
   publishUsbDeviceState();
+
+  if (DEBUG && millis() - lastHeartbeat > 10000) {
+    UsbSerial.println("loop alive");
+    lastHeartbeat = millis();
+  }
 }
