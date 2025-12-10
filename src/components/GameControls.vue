@@ -278,15 +278,15 @@ onUnmounted(() => {
     background: radial-gradient(circle at 30% 30%, #ff6b6b, #dc3545 50%, #a02030);
   }
   50% {
-    background: radial-gradient(circle at 30% 30%, #ff5555, #ff3333 50%, #cc0000);
+    background: radial-gradient(circle at 30% 30%, #ff7777, #e63e52 50%, #b02840);
     box-shadow:
       inset -2px -2px 5px rgba(0, 0, 0, 0.5),
       inset 2px 2px 5px rgba(255, 255, 255, 0.2),
       0 15px 30px 10px rgba(0, 0, 0, 0.5),
       0 5px 15px rgba(0, 0, 0, 0.4),
-      0 0 50px 25px rgba(255, 51, 51, 0.7),
-      0 0 100px 50px rgba(204, 0, 0, 0.4);
-    filter: drop-shadow(0 0 40px rgba(255, 51, 51, 0.6));
+      0 0 30px 15px rgba(255, 51, 51, 0.4),
+      0 0 60px 30px rgba(204, 0, 0, 0.2);
+    filter: drop-shadow(0 0 20px rgba(255, 51, 51, 0.3));
   }
   100% {
     background: radial-gradient(circle at 30% 30%, #ff6b6b, #dc3545 50%, #a02030);
@@ -458,7 +458,7 @@ onUnmounted(() => {
 
     &.button--playing {
       cursor: pointer;
-      animation: redFlash 0.8s ease-in-out 6s infinite;
+      animation: redFlash 1.5s ease-in-out 9s infinite;
 
       &:hover {
         background: radial-gradient(circle at 30% 30%, #ff7777, #e63e52 50%, #b02840);
