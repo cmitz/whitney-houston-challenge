@@ -27,7 +27,7 @@ function generateStar() {
   const newStar = {
     id: starIdCounter++,
     x: Math.random() * 100, // Random horizontal position (0-100%)
-    fallDistance: Math.random() * 300 + 100, // Random fall distance between 100-400px
+    fallDistance: Math.random() * (window.innerHeight * 0.8) + window.innerHeight * 0.2, // Random fall distance between 20-100% of viewport height
     size: Math.random() * 15 + 10, // 10px to 25px
     opacity: Math.random() * 0.5 + 0.5, // 0.5 to 1.0
     duration: Math.random() * 3000 + 2000, // 2000ms to 5000ms
