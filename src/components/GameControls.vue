@@ -233,6 +233,8 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: stretch;
   justify-content: center;
+  transform-style: preserve-3d;
+  transform: perspective(2cm) rotateX(5deg);
 
   button {
     border: none;
@@ -241,8 +243,12 @@ onUnmounted(() => {
     font-size: 1.2rem;
     color: white;
     background-color: #333;
-    cursor: not-allowed;
+    /*cursor: not-allowed;*/
     transition: background-color 0.3s ease;
+
+    border: 15px solid #333;
+    background-color: #dc3545;
+    box-shadow: 0 15px 30px 10px rgba(0, 0, 0, 0.3);
 
     &.button--playing {
       cursor: pointer;
