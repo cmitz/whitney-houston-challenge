@@ -210,6 +210,7 @@ onUnmounted(() => {
       max="24"
       autofocus
       ref="teamNameInputRef"
+      placeholder="Enter team name"
     />
 
     <button
@@ -316,7 +317,7 @@ onUnmounted(() => {
     max-height: 150px;
 
     &::placeholder {
-      color: #fff;
+      color: #666;
     }
 
     &:focus {
