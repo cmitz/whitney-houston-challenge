@@ -242,25 +242,39 @@ onUnmounted(() => {
     border: none;
     border-radius: 100%;
     aspect-ratio: 1/1;
-    font-size: 1.2rem;
-    color: white;
-    background-color: #333;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #f5f5f5;
+    background: radial-gradient(circle at 30% 30%, #ff6b6b, #dc3545 50%, #a02030);
     /*cursor: not-allowed;*/
-    transition: background-color 0.3s ease;
+    transition: all 0.1s ease;
 
     border: 15px solid #333;
-    background-color: #dc3545;
-    box-shadow: 0 15px 30px 10px rgba(0, 0, 0, 0.3);
+    box-shadow:
+      inset -2px -2px 5px rgba(0, 0, 0, 0.5),
+      inset 2px 2px 5px rgba(255, 255, 255, 0.2),
+      0 15px 30px 10px rgba(0, 0, 0, 0.5),
+      0 5px 15px rgba(0, 0, 0, 0.4);
 
     &.button--playing {
       cursor: pointer;
-      background-color: #dc3545;
 
       &:hover {
-        background-color: #c82333;
+        background: radial-gradient(circle at 30% 30%, #ff7777, #e63e52 50%, #b02840);
+        box-shadow:
+          inset -2px -2px 5px rgba(0, 0, 0, 0.5),
+          inset 2px 2px 5px rgba(255, 255, 255, 0.2),
+          0 18px 35px 12px rgba(0, 0, 0, 0.5),
+          0 6px 18px rgba(0, 0, 0, 0.4);
       }
       &:active {
-        background-color: #faa;
+        background: radial-gradient(circle at 30% 30%, #ff5555, #cc2f42 50%, #8a1f30);
+        box-shadow:
+          inset -2px -2px 5px rgba(0, 0, 0, 0.6),
+          inset 2px 2px 5px rgba(255, 255, 255, 0.1),
+          0 5px 10px 5px rgba(0, 0, 0, 0.6),
+          0 2px 5px rgba(0, 0, 0, 0.5);
+        transform: scale(0.98);
       }
     }
   }
