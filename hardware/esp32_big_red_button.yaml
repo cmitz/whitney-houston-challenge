@@ -58,6 +58,11 @@ globals:
     type: std::string
     restore_value: no
     initial_value: ''
+  # game mode
+  - id: game_mode
+    type: bool
+    restore_value: yes
+    initial_value: 'true'
   # text to type on keyboard press
   - id: keyboard_type_text
     type: std::string
@@ -103,6 +108,27 @@ text:
     initial_value: 'two_short:d=4,o=4,b=100:16e,16e'
 
 switch:
+  - platform: template
+    id: game_mode_switch
+    name: Game Mode on (only press ENTER)
+    icon: mdi:keyboard-space
+    entity_category: config
+    optimistic: true
+    lambda: |
+      if (id(game_mode)) {
+        return true;
+      } else {
+        return false;
+      }
+    turn_on_action:
+      - globals.set:
+          id: game_mode
+          value: 'true'
+    turn_off_action:
+      - globals.set:
+          id: game_mode
+          value: 'false'
+
   - platform: template
     id: keyboard_enter_after_type_ui
     name: Enter after typing
@@ -152,8 +178,19 @@ binary_sensor:
       - logger.log: Button Pressed
       - rtttl.play:
           rtttl: !lambda 'return id(buzzer_sound).state;'
-      - script.execute:
-          id: send_text
+      - if:
+          condition:
+            - lambda: 'return id(game_mode);'
+          then:
+            - script.execute:
+                id: send_text
+                ducky_script: |
+                  STRING x
+                  ENTER
+          else:
+            - script.execute:
+                id: send_text
+                ducky_script: !lambda 'return id(keyboard_type_text);'
     entity_category: diagnostic
 
 output:
@@ -184,18 +221,20 @@ script:
           id(keyboard_type_text) = ducktype;
 
   - id: send_text
+    parameters:
+      ducky_script: string
     then:
       - logger.log:
           level: INFO
           format: 'ducky_request: %s'
-          args: ['id(keyboard_type_text).c_str()']
+          args: ['ducky_script.c_str()']
       - uart.write:
           id: ducky
           # encapsulate message with STX and ETX chars and write to serial port
           data: !lambda |-
             char stx = 0x02;
             char etx = 0x03;
-            std::string s = stx + id(keyboard_type_text) + etx;
+            std::string s = stx + ducky_script + etx;
             return std::vector<unsigned char>(s.begin(),s.end());
 
 ### Start uart communication stuff with arduino
