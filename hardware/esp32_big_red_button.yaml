@@ -53,11 +53,22 @@ logger:
   level: INFO
 
 globals:
-  # global variable for the hostmachine power state
+  # hostmachine power state
   - id: last_host_state
     type: std::string
     restore_value: no
     initial_value: ''
+  # text to type on keyboard press
+  - id: keyboard_type_text
+    type: std::string
+    restore_value: yes
+    max_restore_data_length: 128
+    initial_value: '"STRING Hello, World!\nENTER"'
+  # whether to press 'enter' after typing
+  - id: keyboard_enter_after_type
+    type: bool
+    restore_value: yes
+    initial_value: 'true'
 
 external_components:
   - source: github://eigger/espcomponents@latest # https://github.com/eigger/espcomponents/tree/master/components/uartex
@@ -66,6 +77,67 @@ external_components:
 uartex:
   rx_footer: "\r\n"
 ### End copy from https://github.com/jensweimann/esphome_ducky/blob/main/esphome/nodemcu.yaml
+
+# Input configuration through Home Assistant UI
+text:
+  - platform: template
+    id: keyboard_input
+    name: Keyboard Input
+    icon: mdi:keyboard
+    entity_category: config
+    mode: text
+    optimistic: true
+    initial_value: 'Hello, World!'
+    on_value:
+      then:
+        - script.execute:
+            id: prepare_text
+
+  - platform: template
+    id: buzzer_sound
+    name: Buzzer RTTTL pattern
+    icon: mdi:volume-vibrate
+    entity_category: config
+    mode: text
+    optimistic: true
+    initial_value: 'two_short:d=4,o=4,b=100:16e,16e'
+
+switch:
+  - platform: template
+    id: keyboard_enter_after_type_ui
+    name: Enter after typing
+    icon: mdi:keyboard-return
+    entity_category: config
+    optimistic: true
+    lambda: 'return id(keyboard_enter_after_type);'
+    turn_on_action:
+      - globals.set:
+          id: keyboard_enter_after_type
+          value: 'true'
+      - script.execute:
+          id: prepare_text
+    turn_off_action:
+      - globals.set:
+          id: keyboard_enter_after_type
+          value: 'false'
+      - script.execute:
+          id: prepare_text
+
+select:
+  - platform: template
+    id: rtttl_pattern_select
+    name: RTTTL Pattern
+    icon: mdi:music-note
+    entity_category: config
+    initial_option: 'two_short:d=4,o=4,b=100:16e,16e'
+    options:
+      - 'two_short:d=4,o=4,b=100:16e,16e'
+      - 'star_wars:d=16,o=5,b=100:4e,4e,4e,8c,p,g,4e,8c,p,g,4e,4p,4b,4b,4b,8c6,p,g,4d#,8c,p,g,4e,8p'
+      - 'santa:d=4,o=6,b=200:e,g,c,e,d,2f,b5,1c'
+    set_action:
+      - text.set:
+          id: buzzer_sound
+          value: !lambda 'return x.c_str();'
 
 ### Button Sensor and debug sound
 binary_sensor:
@@ -78,14 +150,10 @@ binary_sensor:
         pulldown: true
     on_press:
       - logger.log: Button Pressed
-      # - rtttl.play: 'star_wars:d=16,o=5,b=100:4e,4e,4e,8c,p,g,4e,8c,p,g,4e,4p,4b,4b,4b,8c6,p,g,4d#,8c,p,g,4e,8p'
-      - rtttl.play: 'two_short:d=4,o=5,b=100:16e6,16e6'
+      - rtttl.play:
+          rtttl: !lambda 'return id(buzzer_sound).state;'
       - script.execute:
           id: send_text
-          ducky_script: |
-            STRING Hello, World!
-            DELAY 100
-            ENTER
     entity_category: diagnostic
 
 output:
@@ -94,27 +162,40 @@ output:
     frequency: 1000 Hz
     id: buzzer_output
 
+# Examples:
+# two_short:d=4,o=5,b=100:16e6,16e6
+# star_wars:d=16,o=5,b=100:4e,4e,4e,8c,p,g,4e,8c,p,g,4e,4p,4b,4b,4b,8c6,p,g,4d#,8c,p,g,4e,8p
 rtttl:
   output: buzzer_output
   id: my_rtttl
 ### End button sensor and debug sound
 
 script:
+  - id: prepare_text
+    then:
+      - lambda: |-
+          std::string ducktype = "";
+          if (id(keyboard_input).state != "") {
+            ducktype += "STRING " + id(keyboard_input).state;
+          }
+          if (id(keyboard_enter_after_type)) {
+            ducktype += "\nENTER";
+          }
+          id(keyboard_type_text) = ducktype;
+
   - id: send_text
-    parameters:
-      ducky_script: string
     then:
       - logger.log:
           level: INFO
           format: 'ducky_request: %s'
-          args: ['ducky_script.c_str()']
+          args: ['id(keyboard_type_text).c_str()']
       - uart.write:
           id: ducky
           # encapsulate message with STX and ETX chars and write to serial port
           data: !lambda |-
             char stx = 0x02;
             char etx = 0x03;
-            std::string s = stx + ducky_script + etx;
+            std::string s = stx + id(keyboard_type_text) + etx;
             return std::vector<unsigned char>(s.begin(),s.end());
 
 ### Start uart communication stuff with arduino
@@ -140,9 +221,9 @@ text_sensor:
     id: ducky_usb_input
     name: ${hid_unit_name}_usb_input
 
-  # serial port sensor
   - platform: uartex
     id: read_line_sensor
+    internal: true
     lambda: |-
       return std::string(reinterpret_cast<const char*>(data), len);
     on_value:
