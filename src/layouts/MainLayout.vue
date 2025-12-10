@@ -1,4 +1,5 @@
 <template>
+  <TwinklingStars />
   <main class="layout">
     <figure class="logo">
       <img :src="GameShowLogo" alt="Whitney Houston Challenge" />
@@ -11,6 +12,7 @@
 <script setup lang="js">
 import { ref, provide, onMounted, onUnmounted } from 'vue'
 
+import TwinklingStars from '../components/TwinklingStars.vue'
 import SettingsPopup from '../components/SettingsPopup.vue'
 import { createSettings, SettingsSymbol } from '../composables/useSettings'
 
@@ -59,11 +61,6 @@ onUnmounted(() => {
   height: 100vh;
   aspect-ratio: var(--layout-aspect-ratio);
   overflow: hidden;
-  background: radial-gradient(
-    circle,
-    var(--color-background-highlight) 0%,
-    var(--color-background-dark) 100%
-  );
 
   padding: 1rem;
 

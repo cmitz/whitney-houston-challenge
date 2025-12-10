@@ -23,4 +23,12 @@ import MainLayout from './layouts/MainLayout.vue'
   --color-background-dark: #07190d;
   --layout-aspect-ratio: 16 / 9;
 }
+
+body {
+  background: radial-gradient(
+    circle,
+    var(--color-background-highlight) 0%,
+    var(--color-background-dark) 100%
+  );
+}
 </style>
