@@ -1,10 +1,15 @@
 import { getSlackWebhookFromStorage } from './localStorage'
 
-export async function postScoreToSlack(round) {
+export async function postScoreToSlack(round, isSuspended = false) {
   const webhookUrl = getSlackWebhookFromStorage()
 
   if (!webhookUrl) {
     console.log('No Slack webhook configured, skipping Slack post')
+    return
+  }
+
+  if (isSuspended) {
+    console.log('Slack posting is suspended, skipping Slack post')
     return
   }
 

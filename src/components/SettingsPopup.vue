@@ -11,12 +11,12 @@
           <label for="slack-webhook">Slack Webhook URL:</label>
           <input
             id="slack-webhook"
-            v-model="slackWebhookUrl"
+            v-model="webhookUrl"
             type="text"
             placeholder="https://hooks.slack.com/services/..."
             class="webhook-input"
           />
-          <button @click="saveSlackWebhook" class="save-btn" :disabled="!slackWebhookUrlValid">
+          <button @click="handleSaveWebhook" class="save-btn" :disabled="!slackWebhookUrlValid">
             Save Webhook
           </button>
           <p v-if="webhookSaved" class="success-message">✓ Webhook saved successfully</p>
@@ -25,8 +25,29 @@
         <hr class="divider" />
 
         <div class="settings-section">
+          <h3>Slack Integration</h3>
+          <div class="toggle-container">
+            <label for="suspend-slack" class="toggle-label">Suspend Slack Posting</label>
+            <button
+              id="suspend-slack"
+              class="toggle-btn"
+              :class="{ active: suspendState }"
+              @click="toggleSuspend"
+              :aria-pressed="suspendState"
+            >
+              <span class="toggle-switch"></span>
+            </button>
+          </div>
+          <p class="info-text">
+            {{ suspendState ? '🔴 Slack posting is suspended' : '🟢 Slack posting is active' }}
+          </p>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="settings-section">
           <h3>Data Management</h3>
-          <button @click="clearLocalStorage" class="danger-btn">Clear localStorage</button>
+          <button @click="handleClearLocalStorage" class="danger-btn">Clear localStorage</button>
           <p class="warning-text">This will delete all saved scores and cannot be undone.</p>
         </div>
       </div>
@@ -35,29 +56,32 @@
 </template>
 
 <script setup lang="js">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
-import {
-  clearRoundsFromStorage,
-  clearSlackWebhookFromStorage,
-  saveSlackWebhookToStorage,
-} from '../helpers/localStorage'
+import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
+import { clearRoundsFromStorage } from '../helpers/localStorage'
+import { SettingsSymbol } from '../composables/useSettings'
 
 const emit = defineEmits(['localStorage-cleared'])
 
+const settings = inject(SettingsSymbol)
 const isOpen = ref(false)
-const slackWebhookUrl = ref('')
+const webhookUrl = ref('')
 const webhookSaved = ref(false)
 
-const WEBHOOK_STORAGE_KEY = 'slack_webhook_url'
+const suspendState = computed(() => settings.suspendSlackPosting.value)
+
+function toggleSuspend() {
+  settings.toggleSuspendSlackPosting()
+}
 
 function openPopup() {
   isOpen.value = true
-  loadSlackWebhook()
+  webhookUrl.value = settings.slackWebhookUrl.value || ''
 }
 
 function closePopup() {
   isOpen.value = false
   webhookSaved.value = false
+  webhookUrl.value = settings.slackWebhookUrl.value || ''
 }
 
 function togglePopup() {
@@ -68,22 +92,14 @@ function togglePopup() {
   }
 }
 
-function loadSlackWebhook() {
-  const saved = localStorage.getItem(WEBHOOK_STORAGE_KEY)
-  if (saved) {
-    slackWebhookUrl.value = saved
-  }
-}
-
 const slackWebhookUrlValid = computed(() => {
-  return (
-    slackWebhookUrl.value.trim().startsWith('https://hooks.slack.com/services/') ||
-    slackWebhookUrl.value.trim() === ''
-  )
+  const url = webhookUrl.value.trim()
+  return url.startsWith('https://hooks.slack.com/services/') || url === ''
 })
-function saveSlackWebhook() {
-  if (slackWebhookUrl.value.trim()) {
-    saveSlackWebhookToStorage(slackWebhookUrl.value.trim())
+
+function handleSaveWebhook() {
+  if (webhookUrl.value.trim()) {
+    settings.saveWebhook(webhookUrl.value)
     webhookSaved.value = true
     setTimeout(() => {
       webhookSaved.value = false
@@ -91,13 +107,11 @@ function saveSlackWebhook() {
   }
 }
 
-function clearLocalStorage() {
+function handleClearLocalStorage() {
   if (confirm('Are you sure you want to delete all saved scores? This cannot be undone.')) {
     clearRoundsFromStorage()
-    clearSlackWebhookFromStorage()
-    // Reload the webhook after clearing
-    loadSlackWebhook()
-    // Emit event to notify other components
+    settings.clearWebhook()
+    webhookUrl.value = ''
     emit('localStorage-cleared')
     closePopup()
   }
@@ -294,5 +308,65 @@ defineExpose({
   border: none;
   border-top: 1px solid #e0e0e0;
   margin: 20px 0;
+}
+
+.toggle-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.toggle-label {
+  margin: 0;
+  font-weight: 500;
+  color: #555;
+  font-size: 14px;
+}
+
+.toggle-btn {
+  position: relative;
+  width: 50px;
+  height: 28px;
+  border: 2px solid #ddd;
+  border-radius: 14px;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  padding-left: 2px;
+}
+
+.toggle-btn:hover {
+  border-color: #2d5f4f;
+}
+
+.toggle-btn.active {
+  background-color: #2d5f4f;
+  border-color: #2d5f4f;
+  padding-left: auto;
+  padding-right: 2px;
+}
+
+.toggle-switch {
+  width: 22px;
+  height: 22px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  display: block;
+}
+
+.toggle-btn.active .toggle-switch {
+  transform: translateX(22px);
+}
+
+.info-text {
+  margin: 8px 0 0 0;
+  color: #666;
+  font-size: 13px;
+  font-weight: 500;
 }
 </style>

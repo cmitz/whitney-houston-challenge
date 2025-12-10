@@ -7,8 +7,10 @@ import { gameMachine } from '../state-machines/gameMachine'
 import ScoreBoard from './ScoreBoard.vue'
 import { loadRoundsFromStorage, addRoundToStorage } from '../helpers/localStorage'
 import { postScoreToSlack } from '../helpers/postToSlack'
+import { SettingsSymbol } from '../composables/useSettings'
 
 const registerStorageClearedCallback = inject('registerStorageClearedCallback', () => {})
+const settings = inject(SettingsSymbol)
 
 // UI elements
 const challengeAudioRef = ref(null)
@@ -87,7 +89,7 @@ function hit() {
     gamePlayedAt: context.gamePlayedAt,
   }
   addRoundToStorage(roundData)
-  postScoreToSlack(roundData)
+  postScoreToSlack(roundData, settings.suspendSlackPosting.value)
   scoresList.value = loadRoundsFromStorage()
 }
 

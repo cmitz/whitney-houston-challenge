@@ -85,7 +85,7 @@ export const gameMachine = setup({}).createMachine({
         },
         'round.completed': {
           target: 'roundFinished',
-          actions: assign(({ context, event }) => {
+          actions: assign(({ event }) => {
             console.log('seconds in the music:', event.secondsIn)
             const msAfterStart = event.secondsIn * 1000
             const msOff = Math.abs(msAfterStart - IDEAL_HIT_TIMESTAMP_AFTER_START)

@@ -12,11 +12,13 @@
 import { ref, provide, onMounted, onUnmounted } from 'vue'
 
 import SettingsPopup from '../components/SettingsPopup.vue'
+import { createSettings, SettingsSymbol } from '../composables/useSettings'
 
 import GameShowLogo from '../assets/logo_03.png'
 
 const settingsPopupRef = ref(null)
 const callbacks = ref([])
+const settings = createSettings()
 
 function handleKeyDown(e) {
   // Cmd+, (Comma) on Mac or Ctrl+, on Windows/Linux
@@ -27,6 +29,7 @@ function handleKeyDown(e) {
 }
 
 function notifyStorageCleared() {
+  settings.clearWebhook()
   callbacks.value.forEach((callback) => callback())
 }
 
@@ -35,8 +38,10 @@ function registerStorageClearedCallback(callback) {
 }
 
 provide('registerStorageClearedCallback', registerStorageClearedCallback)
+provide(SettingsSymbol, settings)
 
 onMounted(() => {
+  settings.loadPersistedSettings()
   window.addEventListener('keydown', handleKeyDown)
 })
 
