@@ -251,7 +251,7 @@ onUnmounted(() => {
         disableremoteplayback
         preload="auto"
         ref="challengeAudioRef"
-        src="/challenge_snippet_i_will_always_love_rudolph.wav"
+        src="challenge_snippet_i_will_always_love_rudolph.wav"
         @ended="audioEnded"
         @canplaythrough="challengeAudioLoadedCompletely"
       ></audio>
@@ -262,7 +262,7 @@ onUnmounted(() => {
         disableremoteplayback
         preload="auto"
         ref="buttonHitAudioRef"
-        src="/impact.wav"
+        src="impact.wav"
         @canplaythrough="buttonHitAudioLoadedCompletely"
       ></audio>
     </figure>
