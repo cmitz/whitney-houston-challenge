@@ -76,7 +76,7 @@ onUnmounted(() => {
     'team-input button right-sidebar'
     'footer footer footer';
 
-  gap: 1rem;
+  gap: 0rem 3rem;
 
   .logo {
     grid-area: logo;

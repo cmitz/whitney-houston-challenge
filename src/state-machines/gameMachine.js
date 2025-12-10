@@ -3,27 +3,27 @@ import { assign, setup } from 'xstate'
 const IDEAL_HIT_TIMESTAMP_AFTER_START = 19000
 const THRESHOLDS = [
   {
-    below: 100,
+    below: 300,
     points: 10,
   },
   {
-    below: 300,
+    below: 600,
     points: 7,
   },
   {
-    below: 500,
+    below: 1000,
     points: 5,
   },
   {
-    below: 1000,
+    below: 1500,
     points: 3,
   },
   {
-    below: 1500,
+    below: 2000,
     points: 2,
   },
   {
-    below: 2000,
+    below: 3000,
     points: 1,
   },
 ]

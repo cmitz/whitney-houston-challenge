@@ -40,6 +40,7 @@ defineProps({
   background-color: rgba(0, 0, 0, 0.2);
   padding: 1rem;
   border-radius: 8px;
+  overflow-y: hidden;
 }
 
 .score-list {
@@ -47,6 +48,17 @@ defineProps({
   padding: 0;
   margin: 0;
   position: relative;
+  max-height: 500px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Hide scrollbar while keeping scrolling functionality */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Hide scrollbar for webkit browsers (Chrome, Safari) */
+.score-list::-webkit-scrollbar {
+  display: none;
 }
 
 .score-item {

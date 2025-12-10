@@ -69,8 +69,8 @@ function startChallenge() {
     audioContext.value.resume()
   }
   challengeAudioRef.value.currentTime = 0
-  challengeAudioRef.value.play()
   sendActor({ type: 'round.start' })
+  challengeAudioRef.value.play()
   hitButtonRef.value.focus()
 }
 
@@ -112,7 +112,7 @@ function reloadScores() {
 //   return false
 // })
 const sortedScores = computed(() => {
-  return sortBy(scoresList.value, ['score', 'msOff']).reverse()
+  return sortBy(scoresList.value, ['msOff'])
 })
 
 // Event listeners
@@ -159,9 +159,6 @@ onUnmounted(() => {
       autofocus
       ref="teamNameInputRef"
     />
-    <button @click="startChallenge" :disabled="!actor.matches('waitingForStart')">
-      Start challenge
-    </button>
 
     <button @click="saveAndPlayAgain" :disabled="!actor.matches('roundFinished')">
       Save and play again
@@ -174,7 +171,10 @@ onUnmounted(() => {
       :disabled="!actor.matches('roundPlaying')"
       ref="hitButtonRef"
       class="button"
-      :class="{ 'button--playing': actor.matches('roundPlaying') }"
+      :class="{
+        'button--playing': actor.matches('roundPlaying'),
+        'button--inactive': !actor.matches('roundPlaying'),
+      }"
     >
       HIT IT!
     </button>
@@ -208,6 +208,26 @@ onUnmounted(() => {
 </template>
 
 <style scoped lang="css">
+@keyframes redFlash {
+  0% {
+    background: radial-gradient(circle at 30% 30%, #ff6b6b, #dc3545 50%, #a02030);
+  }
+  50% {
+    background: radial-gradient(circle at 30% 30%, #ff5555, #ff3333 50%, #cc0000);
+    box-shadow:
+      inset -2px -2px 5px rgba(0, 0, 0, 0.5),
+      inset 2px 2px 5px rgba(255, 255, 255, 0.2),
+      0 15px 30px 10px rgba(0, 0, 0, 0.5),
+      0 5px 15px rgba(0, 0, 0, 0.4),
+      0 0 50px 25px rgba(255, 51, 51, 0.7),
+      0 0 100px 50px rgba(204, 0, 0, 0.4);
+    filter: drop-shadow(0 0 40px rgba(255, 51, 51, 0.6));
+  }
+  100% {
+    background: radial-gradient(circle at 30% 30%, #ff6b6b, #dc3545 50%, #a02030);
+  }
+}
+
 .team-input {
   grid-area: team-input;
   display: flex;
@@ -218,14 +238,36 @@ onUnmounted(() => {
   input {
     flex: 1;
     border: none;
-    border-bottom: 1px solid #ccc;
-    padding: 0.5rem;
+    padding: 0.75rem 1rem;
     font-size: 1.2rem;
     outline: none;
-    transition: border-color 0.3s ease;
+    transition: all 0.3s ease;
+    background-color: #1a1a1a;
+    color: #ffffff;
+    font-family: monospace, sans-serif;
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    border-bottom: 2px solid #000;
+    max-height: 150px;
+
+    &::placeholder {
+      color: #fff;
+    }
 
     &:focus {
-      border-color: #007bff;
+      background-color: #252525;
+      box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 0 8px rgba(0, 123, 255, 0.2);
+      border-bottom: 2px solid #007bff;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      color: #888;
     }
   }
 }
@@ -235,10 +277,10 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: stretch;
   justify-content: center;
-  transform-style: preserve-3d;
-  transform: perspective(2cm) rotateX(5deg);
 
   button {
+    transform-style: preserve-3d;
+    transform: perspective(2cm) rotateX(5deg);
     border: none;
     border-radius: 100%;
     aspect-ratio: 1/1;
@@ -258,6 +300,7 @@ onUnmounted(() => {
 
     &.button--playing {
       cursor: pointer;
+      animation: redFlash 0.8s ease-in-out 6s infinite;
 
       &:hover {
         background: radial-gradient(circle at 30% 30%, #ff7777, #e63e52 50%, #b02840);
@@ -276,6 +319,21 @@ onUnmounted(() => {
           0 2px 5px rgba(0, 0, 0, 0.5);
         transform: scale(0.98);
       }
+    }
+
+    &.button--inactive {
+      cursor: not-allowed;
+      opacity: 0.6;
+      background: radial-gradient(circle at 30% 30%, #8b4545, #6b3535 50%, #4a1f20);
+      box-shadow:
+        inset -2px -2px 5px rgba(0, 0, 0, 0.7),
+        inset 2px 2px 5px rgba(255, 255, 255, 0.05),
+        0 10px 20px 8px rgba(0, 0, 0, 0.6),
+        0 3px 8px rgba(0, 0, 0, 0.5),
+        0 0 15px rgba(139, 69, 69, 0.4),
+        0 0 30px rgba(139, 69, 69, 0.2);
+      filter: drop-shadow(0 0 20px rgba(139, 69, 69, 0.3));
+      color: #b0b0b0;
     }
   }
 }
