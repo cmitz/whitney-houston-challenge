@@ -113,7 +113,7 @@ switch:
     name: Game Mode on (only press ENTER)
     icon: mdi:keyboard-space
     entity_category: config
-    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
     lambda: |
       if (id(game_mode)) {
         return true;
@@ -134,7 +134,7 @@ switch:
     name: Enter after typing
     icon: mdi:keyboard-return
     entity_category: config
-    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
     lambda: 'return id(keyboard_enter_after_type);'
     turn_on_action:
       - globals.set:
