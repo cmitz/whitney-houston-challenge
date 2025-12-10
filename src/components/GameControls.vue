@@ -24,6 +24,11 @@ const loadingStatusRef = ref({
   buttonHitAudioLoaded: false,
 })
 const scoresList = ref([])
+const showCelebration = ref(false)
+const celebrationMessage = ref('')
+const celebrationScore = ref(0)
+const celebrationMs = ref(0)
+let celebrationTimeoutId = null
 
 // Audio API
 const audioContext = ref(null)
@@ -72,9 +77,15 @@ function startChallenge() {
   sendActor({ type: 'round.start' })
   challengeAudioRef.value.play()
   hitButtonRef.value.focus()
+  showCelebration.value = false
 }
 
 function hit() {
+  // Only allow hit if game is currently playing
+  if (!actor.value.matches('roundPlaying')) {
+    return
+  }
+
   buttonHitAudioRef.value.currentTime = 0
   buttonHitAudioRef.value.play()
 
@@ -91,6 +102,30 @@ function hit() {
   addRoundToStorage(roundData)
   postScoreToSlack(roundData, settings.suspendSlackPosting.value)
   scoresList.value = loadRoundsFromStorage()
+
+  // Show celebration message
+  celebrationScore.value = context.score
+  celebrationMs.value = Math.round(context.msOff)
+
+  if (context.score >= 7) {
+    celebrationMessage.value = 'GREAT'
+  } else if (context.score >= 5) {
+    celebrationMessage.value = 'GOOD'
+  } else if (context.score >= 3) {
+    celebrationMessage.value = 'NICE'
+  } else {
+    celebrationMessage.value = 'NICE TRY'
+  }
+
+  showCelebration.value = true
+
+  // Clear celebration after 5 seconds
+  if (celebrationTimeoutId) {
+    clearTimeout(celebrationTimeoutId)
+  }
+  celebrationTimeoutId = setTimeout(() => {
+    showCelebration.value = false
+  }, 5000)
 }
 
 function saveAndPlayAgain() {
@@ -131,6 +166,14 @@ function audioEnded() {
   sendActor({ type: 'round.timeout' })
 }
 
+// Keyboard handler
+function handleKeyDown(event) {
+  if (event.key.toLowerCase() === 'x' || event.key.toLowerCase() === 'X') {
+    event.preventDefault()
+    hit()
+  }
+}
+
 // Lifecycle managers
 onMounted(() => {
   initAudioAPI()
@@ -140,10 +183,18 @@ onMounted(() => {
   if (registerStorageClearedCallback) {
     registerStorageClearedCallback(reloadScores)
   }
+
+  // Register keyboard listener for "x" key
+  window.addEventListener('keydown', handleKeyDown)
 })
 
 onUnmounted(() => {
-  // cleanup if needed
+  if (celebrationTimeoutId) {
+    clearTimeout(celebrationTimeoutId)
+  }
+
+  // Remove keyboard listener
+  window.removeEventListener('keydown', handleKeyDown)
 })
 </script>
 
@@ -160,12 +211,24 @@ onUnmounted(() => {
       ref="teamNameInputRef"
     />
 
-    <button @click="saveAndPlayAgain" :disabled="!actor.matches('roundFinished')">
+    <button
+      @click="saveAndPlayAgain"
+      :disabled="!actor.matches('roundFinished')"
+      class="save-button"
+      :class="{ 'save-button--visible': actor.matches('roundFinished') }"
+    >
       Save and play again
     </button>
   </div>
 
   <div class="big-red-button">
+    <div v-if="showCelebration" class="celebration">
+      <div class="celebration-message">{{ celebrationMessage }}</div>
+      <div class="celebration-details">
+        <span class="celebration-score">{{ celebrationScore }} pts</span>
+        <span class="celebration-ms">{{ celebrationMs }}ms</span>
+      </div>
+    </div>
     <button
       @click="hit"
       :disabled="!actor.matches('roundPlaying')"
@@ -271,12 +334,109 @@ onUnmounted(() => {
     }
   }
 }
+
+.celebration {
+  position: absolute;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  animation: celebrationFadeOut 5s ease-in-out forwards;
+  z-index: 10;
+}
+
+@keyframes celebrationFadeOut {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  75% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+}
+
+.celebration-message {
+  font-size: 3.5rem;
+  font-weight: bold;
+  color: #ffff77;
+  text-shadow:
+    2px 2px 8px rgba(0, 0, 0, 0.9),
+    0 0 20px rgba(255, 255, 0, 0.6);
+  letter-spacing: 3px;
+  margin-bottom: 0.5rem;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.celebration-details {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  font-size: 0.9rem;
+  color: #aaa;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  font-family: monospace, sans-serif;
+}
+
+.celebration-score,
+.celebration-ms {
+  display: inline-block;
+}
+
+.save-button {
+  background-color: #1a1a1a;
+  color: #ffffff;
+  border: none;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-family: monospace, sans-serif;
+  font-weight: bold;
+  border-bottom: 2px solid #000;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &:hover:not(:disabled) {
+    background-color: #252525;
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      inset 0 0 8px rgba(0, 123, 255, 0.2);
+    border-bottom: 2px solid #007bff;
+  }
+
+  &:active:not(:disabled) {
+    background-color: #1a1a1a;
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0;
+    cursor: not-allowed;
+    color: #888;
+    pointer-events: none;
+  }
+
+  &.save-button--visible {
+    opacity: 1;
+  }
+}
 .big-red-button {
   grid-area: button;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   justify-content: center;
+  position: relative;
 
   button {
     transform-style: preserve-3d;
