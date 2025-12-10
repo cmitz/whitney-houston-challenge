@@ -329,7 +329,7 @@ onUnmounted(() => {
     }
 
     &:disabled {
-      opacity: 0.6;
+      opacity: 1;
       cursor: not-allowed;
       color: #888;
     }
@@ -480,7 +480,7 @@ onUnmounted(() => {
 
     &.button--inactive {
       cursor: not-allowed;
-      opacity: 0.6;
+      opacity: 1;
       background: radial-gradient(circle at 30% 30%, #8b4545, #6b3535 50%, #4a1f20);
       box-shadow:
         inset -2px -2px 5px rgba(0, 0, 0, 0.7),

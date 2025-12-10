@@ -1,4 +1,4 @@
-name: Deploy demo to Github Pages
+name: Deploy to Github Pages
 
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   gh_pages:
-    name: Deploy Storybook to GH Pages
+    name: Deploy to GH Pages
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

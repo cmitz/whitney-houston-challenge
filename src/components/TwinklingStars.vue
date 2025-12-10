@@ -6,11 +6,11 @@
       class="star"
       :style="{
         left: star.x + '%',
-        animation: `fall ${star.duration}ms linear forwards`,
+        top: '0px',
         '--fall-distance': star.fallDistance + 'px',
+        '--duration': star.duration,
         width: star.size + 'px',
         height: star.size + 'px',
-        opacity: star.opacity,
       }"
     ></div>
   </div>
@@ -27,9 +27,8 @@ function generateStar() {
   const newStar = {
     id: starIdCounter++,
     x: Math.random() * 100, // Random horizontal position (0-100%)
-    fallDistance: Math.random() * (window.innerHeight * 0.8) + window.innerHeight * 0.2, // Random fall distance between 20-100% of viewport height
-    size: Math.random() * 15 + 10, // 10px to 25px
-    opacity: Math.random() * 0.5 + 0.5, // 0.5 to 1.0
+    fallDistance: Math.random() * 400 + 200, // Random fall distance between 200-600px
+    size: Math.random() * 8 + 4, // 4px to 12px
     duration: Math.random() * 3000 + 2000, // 2000ms to 5000ms
   }
 
@@ -65,22 +64,23 @@ onUnmounted(() => {
 
 .star {
   position: fixed;
-  top: 0;
   background: radial-gradient(circle at 30% 30%, #ffff99, #ffdd00, #ffaa00);
   border-radius: 50%;
   box-shadow:
-    0 0 10px rgba(255, 221, 0, 0.8),
-    0 0 20px rgba(255, 170, 0, 0.4);
+    0 0 15px rgba(255, 221, 0, 1),
+    0 0 30px rgba(255, 170, 0, 0.8),
+    0 0 45px rgba(255, 255, 0, 0.6);
   filter: blur(0.5px);
   pointer-events: none;
+  animation: fall calc(var(--duration) * 1ms) linear forwards;
 }
 
 @keyframes fall {
-  from {
+  0% {
     transform: translateY(0);
     opacity: 1;
   }
-  to {
+  100% {
     transform: translateY(var(--fall-distance));
     opacity: 0;
   }
