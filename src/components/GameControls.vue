@@ -28,7 +28,7 @@ const showCelebration = ref(false)
 const celebrationMessage = ref('')
 const celebrationScore = ref(0)
 const celebrationMs = ref(0)
-let celebrationTimeoutId = null
+let autoResetTimeoutId = null
 
 // Audio API
 const audioContext = ref(null)
@@ -108,28 +108,21 @@ function hit() {
   celebrationMs.value = Math.round(context.msOff)
 
   if (context.score >= 7) {
-    celebrationMessage.value = 'GREAT'
+    celebrationMessage.value = 'GREAT!'
   } else if (context.score >= 5) {
-    celebrationMessage.value = 'GOOD'
+    celebrationMessage.value = 'PRETTY GOOD!'
   } else if (context.score >= 3) {
     celebrationMessage.value = 'NICE'
   } else {
-    celebrationMessage.value = 'NICE TRY'
+    celebrationMessage.value = 'NICE TRY...'
   }
 
   showCelebration.value = true
-
-  // Clear celebration after 5 seconds
-  if (celebrationTimeoutId) {
-    clearTimeout(celebrationTimeoutId)
-  }
-  celebrationTimeoutId = setTimeout(() => {
-    showCelebration.value = false
-  }, 5000)
 }
 
 function saveAndPlayAgain() {
   sendActor({ type: 'game.reset' })
+  showCelebration.value = false
 
   scoresList.value = loadRoundsFromStorage()
   challengeAudioRef.value.pause()
@@ -164,6 +157,14 @@ watchEffect(() => {
 })
 function audioEnded() {
   sendActor({ type: 'round.timeout' })
+  // Schedule auto-reset 5 seconds after music ends
+  if (autoResetTimeoutId) {
+    clearTimeout(autoResetTimeoutId)
+  }
+  autoResetTimeoutId = setTimeout(() => {
+    showCelebration.value = false
+    sendActor({ type: 'game.reset' })
+  }, 5000)
 }
 
 // Keyboard handler
@@ -189,8 +190,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (celebrationTimeoutId) {
-    clearTimeout(celebrationTimeoutId)
+  if (autoResetTimeoutId) {
+    clearTimeout(autoResetTimeoutId)
   }
 
   // Remove keyboard listener
@@ -341,22 +342,18 @@ onUnmounted(() => {
   left: 50%;
   transform: translateX(-50%);
   text-align: center;
-  animation: celebrationFadeOut 5s ease-in-out forwards;
+  animation: celebrationEntry 0.5s ease-out forwards;
   z-index: 10;
 }
 
-@keyframes celebrationFadeOut {
+@keyframes celebrationEntry {
   0% {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-  75% {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
   }
   100% {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-20px);
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
   }
 }
 
