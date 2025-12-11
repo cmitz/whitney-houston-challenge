@@ -65,3 +65,23 @@ export function getSlackWebhookFromStorage() {
     return null
   }
 }
+
+const LATENCY_COMPENSATION_STORAGE_KEY = 'latency_compensation'
+
+export function saveLatencyCompensationToStorage(compensation) {
+  try {
+    localStorage.setItem(LATENCY_COMPENSATION_STORAGE_KEY, String(compensation))
+  } catch (error) {
+    console.error('Failed to save latency compensation to storage:', error)
+  }
+}
+
+export function getLatencyCompensationFromStorage() {
+  try {
+    const value = localStorage.getItem(LATENCY_COMPENSATION_STORAGE_KEY)
+    return value !== null ? Number(value) : null
+  } catch (error) {
+    console.error('Failed to get latency compensation from storage:', error)
+    return null
+  }
+}

@@ -3,6 +3,8 @@ import {
   saveSlackWebhookToStorage,
   clearSlackWebhookFromStorage,
   getSlackWebhookFromStorage,
+  saveLatencyCompensationToStorage,
+  getLatencyCompensationFromStorage,
 } from '../helpers/localStorage'
 
 /**
@@ -27,6 +29,7 @@ import {
 export function createSettings() {
   // Persisted settings
   const slackWebhookUrl = ref('')
+  const latencyCompensation = ref(250)
 
   // Non-persisted settings (state only)
   const suspendSlackPosting = ref(false)
@@ -36,6 +39,10 @@ export function createSettings() {
     const savedWebhook = getSlackWebhookFromStorage()
     if (savedWebhook) {
       slackWebhookUrl.value = savedWebhook
+    }
+    const savedLatencyCompensation = getLatencyCompensationFromStorage()
+    if (savedLatencyCompensation !== null) {
+      latencyCompensation.value = savedLatencyCompensation
     }
   }
 
@@ -56,6 +63,14 @@ export function createSettings() {
     slackWebhookUrl.value = ''
   }
 
+  // Save latency compensation to storage
+  function saveLatencyCompensation(value) {
+    const numValue = Math.max(0, Number(value))
+    saveLatencyCompensationToStorage(numValue)
+    latencyCompensation.value = numValue
+    return true
+  }
+
   // Toggle suspend slack posting (state only, not persisted)
   function toggleSuspendSlackPosting() {
     suspendSlackPosting.value = !suspendSlackPosting.value
@@ -71,6 +86,8 @@ export function createSettings() {
     slackWebhookUrl,
     saveWebhook,
     clearWebhook,
+    latencyCompensation,
+    saveLatencyCompensation,
 
     // Non-persisted settings (exposed as readonly refs for reactivity)
     suspendSlackPosting,

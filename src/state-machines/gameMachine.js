@@ -1,7 +1,7 @@
 import { assign, setup } from 'xstate'
 
 const IDEAL_HIT_TIMESTAMP_AFTER_START = 19000
-const LATENCY_COMPENSATION = 250
+const DEFAULT_LATENCY_COMPENSATION = 250
 const THRESHOLDS = [
   {
     below: 300,
@@ -29,12 +29,13 @@ const THRESHOLDS = [
   },
 ]
 
-function initialcontext() {
+function initialcontext(latencyCompensation = DEFAULT_LATENCY_COMPENSATION) {
   return {
     teamName: '',
     score: null,
     gamePlayedAt: null,
     msOff: null,
+    latencyCompensation,
   }
 }
 
@@ -42,76 +43,85 @@ function testTeamNameLength({ context }) {
   return context.teamName.length > 3
 }
 
-export const gameMachine = setup({}).createMachine({
-  context: initialcontext(),
-  id: 'WhitneyHoustonChallenge',
-  initial: 'loadingGame',
-  states: {
-    loadingGame: {
-      on: {
-        'game.loaded': {
+export function createGameMachine(latencyCompensation = DEFAULT_LATENCY_COMPENSATION) {
+  return setup({}).createMachine({
+    context: initialcontext(latencyCompensation),
+    id: 'WhitneyHoustonChallenge',
+    initial: 'loadingGame',
+    states: {
+      loadingGame: {
+        on: {
+          'game.loaded': {
+            target: 'waitingForTeamName',
+          },
+        },
+      },
+      waitingForTeamName: {
+        always: {
+          target: 'waitingForStart',
+          guard: (event) => testTeamNameLength(event),
+        },
+        on: {},
+      },
+      waitingForStart: {
+        always: {
           target: 'waitingForTeamName',
+          guard: (event) => !testTeamNameLength(event),
+        },
+        on: {
+          'round.start': {
+            target: 'roundPlaying',
+          },
+        },
+      },
+      roundPlaying: {
+        entry: assign({
+          gamePlayedAt: () => Date.now(),
+        }),
+        on: {
+          'round.timeout': {
+            target: 'roundFinished',
+            actions: assign({
+              msOff: Infinity,
+              score: 0,
+            }),
+          },
+          'round.completed': {
+            target: 'roundFinished',
+            actions: assign(({ event, context }) => {
+              console.log('seconds in the music:', event.secondsIn)
+              const msAfterStart = event.secondsIn * 1000
+              const msOff = Math.abs(
+                msAfterStart - IDEAL_HIT_TIMESTAMP_AFTER_START - context.latencyCompensation,
+              )
+              const score = THRESHOLDS.find((threshold) => threshold.below >= msOff)?.points || 0
+              return { msOff, score }
+            }),
+          },
+        },
+      },
+      roundFinished: {
+        on: {
+          'game.reset': {
+            target: 'waitingForTeamName',
+            actions: assign(initialcontext()),
+          },
         },
       },
     },
-    waitingForTeamName: {
-      always: {
-        target: 'waitingForStart',
-        guard: (event) => testTeamNameLength(event),
+    on: {
+      'team.update_name': {
+        actions: assign({
+          teamName: ({ event }) => event.value,
+        }),
       },
-      on: {},
-    },
-    waitingForStart: {
-      always: {
-        target: 'waitingForTeamName',
-        guard: (event) => !testTeamNameLength(event),
-      },
-      on: {
-        'round.start': {
-          target: 'roundPlaying',
-        },
+      'latency.update': {
+        actions: assign({
+          latencyCompensation: ({ event }) => event.value,
+        }),
       },
     },
-    roundPlaying: {
-      entry: assign({
-        gamePlayedAt: () => Date.now(),
-      }),
-      on: {
-        'round.timeout': {
-          target: 'roundFinished',
-          actions: assign({
-            msOff: Infinity,
-            score: 0,
-          }),
-        },
-        'round.completed': {
-          target: 'roundFinished',
-          actions: assign(({ event }) => {
-            console.log('seconds in the music:', event.secondsIn)
-            const msAfterStart = event.secondsIn * 1000
-            const msOff = Math.abs(
-              msAfterStart - IDEAL_HIT_TIMESTAMP_AFTER_START - LATENCY_COMPENSATION,
-            )
-            const score = THRESHOLDS.find((threshold) => threshold.below >= msOff)?.points || 0
-            return { msOff, score }
-          }),
-        },
-      },
-    },
-    roundFinished: {
-      on: {
-        'game.reset': {
-          target: 'waitingForTeamName',
-          actions: assign(initialcontext()),
-        },
-      },
-    },
-  },
-  on: {
-    'team.update_name': {
-      actions: assign({
-        teamName: ({ event }) => event.value,
-      }),
-    },
-  },
-})
+  })
+}
+
+export const gameMachine = createGameMachine()

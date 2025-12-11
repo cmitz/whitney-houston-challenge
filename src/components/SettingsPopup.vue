@@ -43,6 +43,25 @@
         <hr class="divider" />
 
         <div class="settings-section">
+          <h3>Latency Compensation</h3>
+          <label for="latency-slider">Compensation: {{ latencyCompensationValue }} ms</label>
+          <input
+            id="latency-slider"
+            v-model.number="latencyCompensationValue"
+            type="range"
+            min="0"
+            max="500"
+            step="10"
+            class="latency-slider"
+          />
+          <p class="warning-text">
+            Adjust based on your device's input latency. Test below to find your optimal value.
+          </p>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="settings-section">
           <h3>Test latency</h3>
           <p class="warning-text">Press the button on the 4th beat</p>
           <div class="latency-test">
@@ -59,6 +78,7 @@
             </figure>
 
             <pre>{{ msCompensation }} ms compensation</pre>
+            <button @click="handleApplyLatencyTest" class="save-btn">Apply test result</button>
           </div>
         </div>
 
@@ -75,7 +95,7 @@
 </template>
 
 <script setup lang="js">
-import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
+import { ref, computed, onMounted, onUnmounted, inject, watch } from 'vue'
 import { clearRoundsFromStorage } from '../helpers/localStorage'
 import { SettingsSymbol } from '../composables/useSettings'
 
@@ -85,6 +105,7 @@ const settings = inject(SettingsSymbol)
 const isOpen = ref(false)
 const webhookUrl = ref('')
 const webhookSaved = ref(false)
+const latencyCompensationValue = ref(250)
 
 const suspendState = computed(() => settings.suspendSlackPosting.value)
 
@@ -100,12 +121,14 @@ function toggleSuspend() {
 function openPopup() {
   isOpen.value = true
   webhookUrl.value = settings.slackWebhookUrl.value || ''
+  latencyCompensationValue.value = settings.latencyCompensation.value
 }
 
 function closePopup() {
   isOpen.value = false
   webhookSaved.value = false
   webhookUrl.value = settings.slackWebhookUrl.value || ''
+  latencyCompensationValue.value = settings.latencyCompensation.value
 }
 
 function togglePopup() {
@@ -114,6 +137,10 @@ function togglePopup() {
   } else {
     openPopup()
   }
+}
+
+function handleLatencyCompensationChange() {
+  settings.saveLatencyCompensation(latencyCompensationValue.value)
 }
 
 const slackWebhookUrlValid = computed(() => {
@@ -140,7 +167,8 @@ function startLatencyTest() {
 
 function resetLatencyTest() {
   console.log('Resetting latency test')
-  latencyTestAudioRef.value.currenttime = 0
+  latencyTestAudioRef.value.currentTime = 0
+  latencyTestAudioRef.value.pause()
 }
 
 // The beat is exactly on the 2 seconds mark
@@ -150,6 +178,13 @@ function handleLatencyTestButton() {
     msCompensation.value = Date.now() - latencyTestStartedAt.value - 1500
   }
   resetLatencyTest()
+}
+
+function handleApplyLatencyTest() {
+  if (msCompensation.value !== 0) {
+    latencyCompensationValue.value = msCompensation.value
+    handleLatencyCompensationChange()
+  }
 }
 
 function handleClearLocalStorage() {
@@ -171,6 +206,10 @@ function handleButton(event) {
     event.preventDefault()
   }
 }
+
+watch(latencyCompensationValue, (newValue) => {
+  settings.saveLatencyCompensation(newValue)
+})
 
 onMounted(() => {
   window.addEventListener('keydown', handleButton)
@@ -419,10 +458,50 @@ defineExpose({
   font-weight: 500;
 }
 
+.latency-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: #ddd;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 12px 0;
+}
+
+.latency-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #2d5f4f;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.latency-slider::-webkit-slider-thumb:hover {
+  background: #1f3f35;
+}
+
+.latency-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #2d5f4f;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s;
+}
+
+.latency-slider::-moz-range-thumb:hover {
+  background: #1f3f35;
+}
+
 .latency-test {
   display: flex;
-  flex-direction: row;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   justify-content: flex-start;
   gap: 1rem;
 }

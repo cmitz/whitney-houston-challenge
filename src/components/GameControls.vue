@@ -1,9 +1,9 @@
 <script setup>
-import { ref, computed, watchEffect, onMounted, onUnmounted, inject } from 'vue'
+import { ref, computed, watchEffect, watch, onMounted, onUnmounted, inject } from 'vue'
 import { useActor } from '@xstate/vue'
 import { sortBy } from 'lodash'
 
-import { gameMachine } from '../state-machines/gameMachine'
+import { createGameMachine } from '../state-machines/gameMachine'
 import ScoreBoard from './ScoreBoard.vue'
 import { loadRoundsFromStorage, addRoundToStorage } from '../helpers/localStorage'
 import { postScoreToSlack } from '../helpers/postToSlack'
@@ -65,8 +65,21 @@ function initAudioAPI() {
   gainNodes.value.buttonHit = buttonHitGain
 }
 
-// Gameplay status
-const { snapshot: actor, send: sendActor } = useActor(gameMachine)
+// Gameplay status - create machine with current latency compensation
+const { snapshot: actor, send: sendActor } = useActor(
+  createGameMachine(settings.latencyCompensation.value),
+)
+
+// Watch for latency compensation changes and update machine context
+watch(
+  () => settings.latencyCompensation.value,
+  (newLatencyCompensation) => {
+    sendActor({
+      type: 'latency.update',
+      value: newLatencyCompensation,
+    })
+  },
+)
 
 // Button handlers
 function startChallenge() {
