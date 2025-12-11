@@ -1,6 +1,7 @@
 import { assign, setup } from 'xstate'
 
 const IDEAL_HIT_TIMESTAMP_AFTER_START = 19000
+const LATENCY_COMPENSATION = 250
 const THRESHOLDS = [
   {
     below: 300,
@@ -88,7 +89,9 @@ export const gameMachine = setup({}).createMachine({
           actions: assign(({ event }) => {
             console.log('seconds in the music:', event.secondsIn)
             const msAfterStart = event.secondsIn * 1000
-            const msOff = Math.abs(msAfterStart - IDEAL_HIT_TIMESTAMP_AFTER_START)
+            const msOff = Math.abs(
+              msAfterStart - IDEAL_HIT_TIMESTAMP_AFTER_START - LATENCY_COMPENSATION,
+            )
             const score = THRESHOLDS.find((threshold) => threshold.below >= msOff)?.points || 0
             return { msOff, score }
           }),
