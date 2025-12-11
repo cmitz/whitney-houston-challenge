@@ -87,7 +87,9 @@
         <div class="settings-section">
           <h3>Data Management</h3>
           <button @click="handleClearLocalStorage" class="danger-btn">Clear localStorage</button>
-          <p class="warning-text">This will delete all saved scores and cannot be undone.</p>
+          <p class="warning-text">
+            This will delete all saved scores but keep your Slack webhook URL and cannot be undone.
+          </p>
         </div>
       </div>
     </div>
@@ -190,8 +192,6 @@ function handleApplyLatencyTest() {
 function handleClearLocalStorage() {
   if (confirm('Are you sure you want to delete all saved scores? This cannot be undone.')) {
     clearRoundsFromStorage()
-    settings.clearWebhook()
-    webhookUrl.value = ''
     emit('localStorage-cleared')
     closePopup()
   }
