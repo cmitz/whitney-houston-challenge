@@ -38,9 +38,28 @@
               <span class="toggle-switch"></span>
             </button>
           </div>
-          <p class="info-text">
-            {{ suspendState ? '🔴 Slack posting is suspended' : '🟢 Slack posting is active' }}
-          </p>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="settings-section">
+          <h3>Test latency</h3>
+          <p class="warning-text">Press the button on the 4th beat</p>
+          <div class="latency-test">
+            <button @click="startLatencyTest">Start test</button>
+            <figure>
+              <figcaption hidden>Metronome</figcaption>
+              <audio
+                noremoteplayback
+                preload="auto"
+                @pause="resetLatencyTest"
+                ref="latencyTestAudioRef"
+                src="metronome-4-beats.wav"
+              ></audio>
+            </figure>
+
+            <pre>{{ msCompensation }} ms compensation</pre>
+          </div>
         </div>
 
         <hr class="divider" />
@@ -68,6 +87,11 @@ const webhookUrl = ref('')
 const webhookSaved = ref(false)
 
 const suspendState = computed(() => settings.suspendSlackPosting.value)
+
+const latencyTestAudioRef = ref(null)
+const latencyTestStartedAt = ref(null)
+const msCompensation = ref(0)
+const latencyTestStarted = ref(false)
 
 function toggleSuspend() {
   settings.toggleSuspendSlackPosting()
@@ -107,6 +131,27 @@ function handleSaveWebhook() {
   }
 }
 
+function startLatencyTest() {
+  console.log('Started latency test')
+  latencyTestStarted.value = true
+  latencyTestStartedAt.value = Date.now()
+  latencyTestAudioRef.value.play()
+}
+
+function resetLatencyTest() {
+  console.log('Resetting latency test')
+  latencyTestAudioRef.value.currenttime = 0
+}
+
+// The beat is exactly on the 2 seconds mark
+function handleLatencyTestButton() {
+  console.log('Pressed X')
+  if (latencyTestStarted.value) {
+    msCompensation.value = Date.now() - latencyTestStartedAt.value - 1500
+  }
+  resetLatencyTest()
+}
+
 function handleClearLocalStorage() {
   if (confirm('Are you sure you want to delete all saved scores? This cannot be undone.')) {
     clearRoundsFromStorage()
@@ -117,18 +162,22 @@ function handleClearLocalStorage() {
   }
 }
 
-function handleEscape(e) {
-  if (e.key === 'Escape' && isOpen.value) {
+function handleButton(event) {
+  if (event.key === 'Escape' && isOpen.value) {
     closePopup()
+  }
+  if (event.key.toLowerCase() === 'x') {
+    handleLatencyTestButton()
+    event.preventDefault()
   }
 }
 
 onMounted(() => {
-  window.addEventListener('keydown', handleEscape)
+  window.addEventListener('keydown', handleButton)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('keydown', handleEscape)
+  window.removeEventListener('keydown', handleButton)
 })
 
 defineExpose({
@@ -237,7 +286,7 @@ defineExpose({
   padding: 10px 12px;
   border: 1px solid #ddd;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 10px;
   font-family: monospace;
   box-sizing: border-box;
   margin-bottom: 12px;
@@ -368,5 +417,13 @@ defineExpose({
   color: #666;
   font-size: 13px;
   font-weight: 500;
+}
+
+.latency-test {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1rem;
 }
 </style>
