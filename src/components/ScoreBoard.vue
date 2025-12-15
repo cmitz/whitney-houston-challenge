@@ -5,18 +5,30 @@ defineProps({
     required: true,
   },
 })
+
+const getMedalClass = (index) => {
+  if (index === 0) return 'medal-gold'
+  if (index === 1) return 'medal-silver'
+  if (index === 2) return 'medal-bronze'
+  return ''
+}
 </script>
 
 <template>
   <div class="scoreboard">
-    <h2 class="scoreboard-header">History</h2>
+    <h2 class="scoreboard-header">Highscores</h2>
     <div v-if="scores.length === 0" class="empty-message">
       <div class="magnetic-strip">
         <span class="empty-text">Make your first attempt!</span>
       </div>
     </div>
     <TransitionGroup v-else name="list" tag="ul" class="score-list">
-      <li v-for="score in scores" :key="score.id" class="score-item">
+      <li
+        v-for="(score, index) in scores"
+        :key="score.id"
+        class="score-item"
+        :class="getMedalClass(index)"
+      >
         <div class="magnetic-strip">
           <span class="team-name">{{ score.teamName }}</span>
           <span class="score-details">
@@ -77,6 +89,58 @@ defineProps({
   border-bottom: 2px solid #000;
   /* Magnetic strip "look" often implies slightly glossy or textured, but basic black/white is consistent with requests */
   font-family: monospace, sans-serif; /* Monospace gives a bit of a retro/label maker vibe */
+}
+
+/* CSS variables for medal colors */
+.medal-gold {
+  --medal-hue: 45;
+  --medal-sat: 100%;
+  --medal-light: 50%;
+}
+
+.medal-silver {
+  --medal-hue: 0;
+  --medal-sat: 0%;
+  --medal-light: 75%;
+}
+
+.medal-bronze {
+  --medal-hue: 25;
+  --medal-sat: 75%;
+  --medal-light: 45%;
+}
+
+/* Medal styles for top 3 positions */
+.medal-gold .magnetic-strip,
+.medal-silver .magnetic-strip,
+.medal-bronze .magnetic-strip {
+  border: 2px solid hsl(var(--medal-hue), var(--medal-sat), var(--medal-light));
+}
+
+/* Shimmer animation for all medals */
+@keyframes shimmer {
+  0%,
+  100% {
+    border-color: hsl(var(--medal-hue), var(--medal-sat), var(--medal-light));
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    border-color: hsl(var(--medal-hue), var(--medal-sat), calc(var(--medal-light) + 10%));
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 0 8px hsla(var(--medal-hue), var(--medal-sat), var(--medal-light), 0.3);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .medal-gold .magnetic-strip,
+  .medal-silver .magnetic-strip,
+  .medal-bronze .magnetic-strip {
+    animation: shimmer 3s ease-in-out infinite;
+  }
 }
 
 .team-name {
