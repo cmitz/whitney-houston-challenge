@@ -48,7 +48,6 @@ defineProps({
   padding: 0;
   margin: 0;
   position: relative;
-  max-height: 500px;
   overflow-y: auto;
   overflow-x: hidden;
   /* Hide scrollbar while keeping scrolling functionality */
