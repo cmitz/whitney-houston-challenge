@@ -225,6 +225,7 @@ onUnmounted(() => {
       ref="teamNameInputRef"
       placeholder="Enter team name"
     />
+    <div v-if="actor.matches('waitingForStart')" class="hint-text">press enter to start</div>
 
     <button
       @click="saveAndPlayAgain"
@@ -347,6 +348,43 @@ onUnmounted(() => {
       cursor: not-allowed;
       color: #888;
     }
+  }
+}
+
+.hint-text {
+  font-size: 1rem;
+  color: #ccc;
+  padding: 0 0.5rem;
+  animation: hintFadeIn 0.3s ease-in;
+  font-family: monospace, sans-serif;
+  letter-spacing: 0.5px;
+  text-transform: lowercase;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hint-text {
+    animation: hintPulse 1s ease-in-out infinite;
+  }
+}
+
+@keyframes hintFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hintPulse {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
   }
 }
 
