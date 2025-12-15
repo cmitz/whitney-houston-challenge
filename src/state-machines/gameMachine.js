@@ -1,7 +1,7 @@
 import { assign, setup } from 'xstate'
 
 const IDEAL_HIT_TIMESTAMP_AFTER_START = 19000
-const DEFAULT_LATENCY_COMPENSATION = 250
+export const DEFAULT_LATENCY_COMPENSATION = 20
 const THRESHOLDS = [
   {
     below: 300,

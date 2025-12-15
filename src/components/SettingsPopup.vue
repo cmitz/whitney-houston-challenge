@@ -77,7 +77,7 @@
               ></audio>
             </figure>
 
-            <pre>{{ msCompensation }} ms compensation</pre>
+            <pre>{{ localMsCompensation }} ms compensation</pre>
             <button @click="handleApplyLatencyTest" class="save-btn">Apply test result</button>
           </div>
         </div>
@@ -101,19 +101,21 @@ import { ref, computed, onMounted, onUnmounted, inject, watch } from 'vue'
 import { clearRoundsFromStorage } from '../helpers/localStorage'
 import { SettingsSymbol } from '../composables/useSettings'
 
+import { DEFAULT_LATENCY_COMPENSATION } from '../state-machines/gameMachine'
+
 const emit = defineEmits(['localStorage-cleared'])
 
 const settings = inject(SettingsSymbol)
 const isOpen = ref(false)
 const webhookUrl = ref('')
 const webhookSaved = ref(false)
-const latencyCompensationValue = ref(250)
+const latencyCompensationValue = ref(DEFAULT_LATENCY_COMPENSATION)
 
 const suspendState = computed(() => settings.suspendSlackPosting.value)
 
 const latencyTestAudioRef = ref(null)
 const latencyTestStartedAt = ref(null)
-const msCompensation = ref(0)
+const localMsCompensation = ref(0)
 const latencyTestStarted = ref(false)
 
 function toggleSuspend() {
@@ -177,14 +179,14 @@ function resetLatencyTest() {
 function handleLatencyTestButton() {
   console.log('Pressed X')
   if (latencyTestStarted.value) {
-    msCompensation.value = Date.now() - latencyTestStartedAt.value - 1500
+    localMsCompensation.value = Date.now() - latencyTestStartedAt.value - 1500
   }
   resetLatencyTest()
 }
 
 function handleApplyLatencyTest() {
-  if (msCompensation.value !== 0) {
-    latencyCompensationValue.value = msCompensation.value
+  if (localMsCompensation.value !== 0) {
+    latencyCompensationValue.value = localMsCompensation.value
     handleLatencyCompensationChange()
   }
 }
