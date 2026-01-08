@@ -77,3 +77,9 @@ Bought components:
 | Pi 5 Power | https://www.raspberrystore.nl/PrestaShop/nl/raspberry-pi-5/511-raspberry-pi-27w-usb-c-power-supply-wit-eu-voor-raspberry-pi-5-5056561803401.html | €12,95 |
 | Pi 5 SD card | https://www.raspberrystore.nl/PrestaShop/nl/storage-sd-kaarten-en-ssd-s/594-micro-sd-kaart-32gb-van-raspberrypi-inclusief-raspberry-pi-os-met-desktop-pre-installed-5056561804200.html | €10,95 |
 | Pi 5 HDMI thing | https://www.raspberrystore.nl/PrestaShop/nl/kabels/237-micro-hdmi-naar-hdmi-contrastekker-zwart-02m-5412810325542.html | €4,95 |
+
+## Resources
+
+This project used this resource as an example how to use ESP (with ESPHome) as an keyboard interface
+* [jensweimann/epshome_ducky](https://github.com/jensweimann/esphome_ducky/tree/main?tab=readme-ov-file)
+* [Seeed docs](https://wiki.seeedstudio.com/XIAO_ESP32S3_esphome/)
