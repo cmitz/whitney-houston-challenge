@@ -25,6 +25,13 @@ When the player hits the button "before" the mark, it will say either-or:
 1. You did it! You're only 50ms off!
 1. Almost! You were 150ms off
 
+#### Screenshots
+
+![Screenshot: start screen](/screenshot_1.jpg)
+
+![Screenshot: game played](/screenshot_2.jpg)
+
+
 ## Recommended IDE Setup
 
 [VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
